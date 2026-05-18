@@ -1,0 +1,302 @@
+package net.the_okazakis.workoutstrech
+
+import android.content.Intent
+import android.media.AudioAttributes
+import android.media.SoundPool
+import android.view.View
+import android.view.WindowManager
+import android.widget.Button
+import android.widget.Chronometer
+import android.widget.ImageButton
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+
+open class BaseActivity : AppCompatActivity() {
+
+    // --- 共通のView ---
+    protected lateinit var chronometer: Chronometer
+    protected lateinit var tv: TextView
+    protected lateinit var tv2: TextView
+    protected lateinit var textmenu: TextView
+    protected lateinit var tvexpla: TextView
+    protected lateinit var btnback: Button
+    protected lateinit var btnstart: Button
+    protected lateinit var btnstop: Button
+    protected lateinit var btnrerstart: Button
+    protected lateinit var btnyoutube: Button
+    protected lateinit var btnChangeTimes: Button
+
+    // --- 共通の変数 ---
+    protected lateinit var soundPool: SoundPool
+    protected lateinit var _helper: DatabaseHelper
+    protected var _workoutId = 0
+    protected var workMenu: String = ""
+    protected var countVolume: Float = 1.0f
+    protected var maxextimes = 2
+    protected var extimes = 0
+    protected var num = 0
+    protected var count = false
+    protected var isSaved = false
+
+    // --- 共通のサウンドID ---
+    protected var sndstr = 0
+    protected var sndend = 0
+    protected var sndup = 0
+    protected var snddown = 0
+    protected var sndchangleg = 0
+    protected var sndstand =0
+    protected var sndsit =0
+    protected var sndgo =0
+    protected var sndchoki =0
+    protected var sndurachoki =0
+    protected var sndpa =0
+    protected var sndstre =0
+    protected var sndbent =0
+    protected var sndnon =0
+    protected var sndtaoshite =0
+    protected var sndkeep30s =0
+    protected var sndkeep = 0
+    protected var sndloosen = 0
+    protected var sndtsubu = 0
+    protected var sndmodo = 0
+    protected var sndkeep3s = 0
+    protected var sndkaeteagete = 0
+    protected var sndbreak = 0
+    protected var sndright=0
+    protected var sndleft=0
+    protected var sndback=0
+    protected var sndkeep1s = 0
+    protected var sndtsubushite = 0
+    protected var snd10re = 0
+    protected var sndkeep20s = 0
+    protected var sndpi = 0
+    protected var sndtoesup = 0
+    protected var sndstandtoes = 0
+    protected var snddropdown = 0
+    protected var sndslowup = 0
+    protected var sndslowdown = 0
+    protected var sndkeep5 = 0
+    protected var sndsizunde = 0
+    protected var sndtaete = 0
+    protected var sndhikitsuke = 0
+    protected var sndslowopen = 0
+    protected var sndslowclose = 0
+    protected var sndkeepmama = 0
+    protected var sndopen = 0
+    protected var sndholdknee = 0
+    protected var sndstretch = 0
+    protected var sndbend = 0
+    // 秒数用
+    // 秒数用はリストにまとめる（個別の snd1..15 は削除！）
+    // 音源IDを保持するリスト（Ashiage.ktなどで使う用）
+    protected val sounds: MutableList<Int> = mutableListOf()
+
+    // 音源を一括ロードする共通メソッド
+    protected fun loadAllStandardSounds() {
+        // 固定音のロード
+        sndstr = soundPool.load(this, R.raw.start, 1)
+        sndend = soundPool.load(this, R.raw.goodjob, 1)
+        sndup = soundPool.load(this, R.raw.up, 1)
+        sndchangleg = soundPool.load(this, R.raw.changeleg, 1)
+        sndstand = soundPool.load(this, R.raw.slowstand, 1)
+        sndsit = soundPool.load(this, R.raw.sitslow, 1)
+        sndgo = soundPool.load(this, R.raw.gu, 1)
+        sndchoki = soundPool.load(this, R.raw.choki, 1)
+        sndurachoki = soundPool.load(this, R.raw.urachoki, 1)
+        sndpa = soundPool.load(this, R.raw.pa, 1)
+        sndstre = soundPool.load(this, R.raw.stretch, 1)
+        sndbent = soundPool.load(this, R.raw.bend, 1)
+        sndnon = soundPool.load(this, R.raw.nosound, 1)
+        sndtaoshite = soundPool.load(this, R.raw.taoshite, 1)
+        sndkeep30s = soundPool.load(this, R.raw.keep30s, 1)
+        sndkeep = soundPool.load(this, R.raw.v10, 1) // keep10sec was missing, using v10 as fallback
+        sndloosen = soundPool.load(this, R.raw.loosen, 1)
+        sndtsubu = soundPool.load(this, R.raw.tsubushite, 1)
+        sndup = soundPool.load(this, R.raw.up, 1)
+        sndmodo = soundPool.load(this, R.raw.modo, 1)
+        sndkeep3s = soundPool.load(this, R.raw.keep3s, 1)
+        sndkaeteagete = soundPool.load(this, R.raw.kaeteagete, 1)
+        sndbreak = soundPool.load(this, R.raw.takeabreak, 1)
+        sndright = soundPool.load(this, R.raw.leftlegforward, 1) // Note: original labels might be swapped
+        sndleft = soundPool.load(this, R.raw.rightlegforward, 1)
+        sndback = soundPool.load(this, R.raw.goback, 1)
+        sndopen = soundPool.load(this, R.raw.open, 1)
+        sndslowclose = soundPool.load(this, R.raw.slowclose, 1)
+        sndkeep1s = soundPool.load(this, R.raw.keep1sec, 1)
+        sndtsubushite = soundPool.load(this, R.raw.tsubushite, 1)
+        snd10re = soundPool.load(this, R.raw.relax10sec, 1)
+        snddown = soundPool.load(this, R.raw.down, 1)
+        sndkeep20s = soundPool.load(this, R.raw.keep20s, 1)
+        sndpi = soundPool.load(this, R.raw.pi, 1)
+        sndtoesup = soundPool.load(this, R.raw.toesup, 1)
+        sndstandtoes = soundPool.load(this, R.raw.standtoes, 1)
+        snddropdown = soundPool.load(this, R.raw.dropdown, 1)
+        sndslowup = soundPool.load(this,R.raw.slowup,1)
+        sndslowdown = soundPool.load(this,R.raw.slowdown,1)
+        sndkeep5 = soundPool.load(this, R.raw.keep5sec, 1)
+        sndsizunde = soundPool.load(this, R.raw.sizunde, 1)
+        sndtaete = soundPool.load(this, R.raw.taete, 1)
+        sndhikitsuke = soundPool.load(this, R.raw.hikitsuke, 1)
+        sndslowopen = soundPool.load(this, R.raw.slowopen, 1)
+        sndkeepmama = soundPool.load(this, R.raw.keepmama, 1)
+        sndslowup = soundPool.load(this, R.raw.slowup, 1)
+        sndslowdown = soundPool.load(this, R.raw.slowdown, 1)
+        sndholdknee = soundPool.load(this, R.raw.holdknee, 1)
+        sndstretch = soundPool.load(this, R.raw.stretch, 1)
+        sndbend = soundPool.load(this, R.raw.bend, 1)
+
+
+        // v1〜v30 を自動でロードしてリストに追加
+        sounds.clear()
+        for (i in 1..30) {
+            val resId = resources.getIdentifier("v$i", "raw", packageName)
+            if (resId != 0) {
+                sounds.add(soundPool.load(this, resId, 1))
+            }
+        }
+    }
+
+    /**
+     * 基本の音源（スタート、終了、アップ、足替え）と
+     * カウント音（v1, v2...）を一括でロードする
+     */
+    protected fun loadCommonSounds(countResIds: List<Int>) {
+        // 1. 固定音源のロード
+        sndstr = soundPool.load(this, R.raw.start, 1)
+        sndend = soundPool.load(this, R.raw.goodjob, 1)
+        sndup = soundPool.load(this, R.raw.up, 1)
+        sndchangleg = soundPool.load(this, R.raw.changeleg, 1)
+
+        // 2. カウント音源（v1〜v15など）をリストにロード
+        sounds.clear()
+        countResIds.forEach { resId ->
+            sounds.add(soundPool.load(this, resId, 1))
+        }
+    }
+
+
+
+    // --- 初期化：Intent・DB・UI・SoundPoolを一括設定 ---
+    protected fun initializeStandardSettings(explanation: String) {
+        _helper = DatabaseHelper(applicationContext)
+
+        // Intentデータ取得
+        countVolume = intent.getFloatExtra("TEXT_KEY", 1.0f)
+        _workoutId = intent.getIntExtra("TEXT_KEY2", 0)
+
+        // メニュー名取得
+        val menuArray = resources.getStringArray(R.array.lv_menu)
+        workMenu = menuArray.getOrElse(_workoutId) { "" }
+
+
+        // UI紐付け
+        setupActivityUI(workMenu, explanation)
+
+        // 目標回数取得
+        loadSettingsTick()
+
+        // SoundPool初期化
+        val aa = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_GAME)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()
+        soundPool = SoundPool.Builder().setAudioAttributes(aa).setMaxStreams(3).build()
+    }
+
+
+    // YouTube画面へ遷移する共通メソッド
+    protected fun openYoutube(youtubeUrl: String) {
+        val intentY = Intent(this, Youtube::class.java)
+        intentY.putExtra("yID", youtubeUrl)
+        startActivity(intentY)
+    }
+
+    // 設定変更画面へ遷移する共通メソッド
+    protected fun openChangeTimes() {
+        val intentC = Intent(this, MainActivity2::class.java)
+        intentC.putExtra("TEXT_KEY4", workMenu) // initializeStandardSettingsで取得済みの変数
+        intentC.putExtra("TEXT_KEY5", _workoutId)
+        startActivity(intentC)
+    }
+
+    private fun setupActivityUI(title: String, explanation: String) {
+        chronometer = findViewById(R.id.chronometer)
+        tv = findViewById(R.id.tv)
+        tv2 = findViewById(R.id.tv2)
+        textmenu = findViewById(R.id.textmenu)
+        tvexpla = findViewById(R.id.tvexpla)
+        btnback = findViewById(R.id.btnback)
+        btnstart = findViewById(R.id.btStart)
+        btnstop = findViewById(R.id.btStop)
+        btnrerstart = findViewById(R.id.btnrestart)
+        btnyoutube = findViewById(R.id.youtube)
+        btnChangeTimes = findViewById(R.id.button2)
+
+        textmenu.text = title
+        tvexpla.text = explanation
+        btnstop.isEnabled = false
+        btnrerstart.isEnabled = false
+
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        supportActionBar?.hide()
+    }
+
+    // 前の音をクリアして再生する便利メソッド
+    protected fun playSoundSingle(soundId: Int) {
+        if (soundId != 0) {
+            soundPool.autoPause() // 再生中の全音を停止
+            soundPool.play(soundId, countVolume, countVolume, 1, 0, 1.0f)
+        }
+    }
+
+    open fun loadSettingsTick() {
+        maxextimes = getDatabaseMaxTimes(_workoutId)
+    }
+
+    protected fun getDatabaseMaxTimes(workoutId: Int): Int {
+        var times = 10
+        val db = _helper.readableDatabase
+        val cursor = db.rawQuery("SELECT times FROM workouttimes WHERE _id = ?", arrayOf(workoutId.toString()))
+        if (cursor.moveToNext()) {
+            times = cursor.getString(0).toIntOrNull() ?: 10
+        }
+        cursor.close()
+        return times
+    }
+
+    // --- ボタン状態制御 ---
+    protected fun setUIForStarting(vararg otherButtons: View) {
+        btnstart.isEnabled = false
+        btnstop.isEnabled = true
+        btnrerstart.isEnabled = false
+        otherButtons.forEach { it.isEnabled = false }
+        chronometer.start()
+    }
+
+    protected fun setUIForStopping(vararg otherButtons: View) {
+        btnstart.isEnabled = true
+        btnstop.isEnabled = false
+        btnrerstart.isEnabled = true
+        otherButtons.forEach { it.isEnabled = true }
+        chronometer.stop()
+        soundPool.autoPause() // 停止時も音をクリア
+    }
+
+    protected fun handleTrainingComplete(tvMessage: TextView, vararg otherButtons: View, onSaveComplete: () -> Unit) {
+        chronometer.stop()
+        btnstart.isEnabled = true
+        btnstop.isEnabled = false
+        btnrerstart.isEnabled = false
+        otherButtons.forEach { it.isEnabled = true }
+        if (!isSaved) {
+            RecordManager.saveRecord(this, "171$workMenu")
+            tvMessage.text = getString(R.string.good_job)
+            onSaveComplete()
+        }
+    }
+
+    override fun onDestroy() {
+        if (::_helper.isInitialized) _helper.close()
+        if (::soundPool.isInitialized) soundPool.release()
+        super.onDestroy()
+    }
+}

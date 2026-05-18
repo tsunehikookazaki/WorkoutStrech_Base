@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" >
+
+    <queries>
+        <package android:name="net.the_okazakis.letsdoit" />
+    </queries>
+
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.WorkoutStrech"
+        tools:ignore="LockedOrientationActivity"
+        tools:targetApi="34" >
+        <activity
+            android:name=".Ashiage"
+            android:exported="false"
+            android:theme="@style/Theme.WorkoutStrech" />
+        <activity
+            android:name=".HipabdactionBelt"
+            android:exported="false" />
+        <activity
+            android:name=".BirdDog"
+            android:exported="false" />
+        <activity
+            android:name=".AshiuranobashiNete"
+            android:exported="false" />
+        <activity
+            android:name=".HipaddactionBall"
+            android:exported="false" />
+        <activity
+            android:name=".Youtube"
+            android:exported="false" />
+        <activity
+            android:name=".KamatasquatTable"
+            android:exported="false" />
+        <activity
+            android:name=".AshikubiKushin"
+            android:exported="false" />
+        <activity
+            android:name=".Kamatakakato"
+            android:exported="false" />
+        <activity
+            android:name=".Kamatasquatwide"
+            android:exported="false" />
+        <activity
+            android:name=".AshiuranobashiTachi"
+            android:exported="false" />
+        <activity
+            android:name=".ChairSquat"
+            android:exported="false" />
+        <activity
+            android:name=".Ashiuranobashi"
+            android:exported="false" />
+        <activity
+            android:name=".Sukebo"
+            android:exported="false" />
+        <activity
+            android:name=".NaiGaiten"
+            android:exported="false" />
+        <activity
+            android:name=".HipLift"
+            android:exported="false" />
+        <activity
+            android:name=".Legraise"
+            android:exported="false" />
+        <activity
+            android:name=".Hukkin"
+            android:exported="false" />
+        <activity
+            android:name=".Hizakakae"
+            android:exported="false" />
+        <activity
+            android:name=".Ashijanken"
+            android:exported="false" />
+        <activity
+            android:name=".Ball"
+            android:exported="false" />
+        <activity
+            android:name=".Tsumasakidachi"
+            android:exported="false" />
+        <activity
+            android:name=".MainActivity2"
+            android:exported="false" />
+        <activity
+            android:name=".Momomae"
+            android:exported="false" />
+        <activity
+            android:name=".Hihukukinn"
+            android:exported="false" />
+        <activity
+            android:name=".Forwardlunge"
+            android:exported="false" />
+        <activity android:name=".LogActivity" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

@@ -1,0 +1,104 @@
+package net.the_okazakis.workoutstrech
+
+import android.content.Intent
+import android.os.Bundle
+import android.os.SystemClock
+
+class Ashiage : BaseActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_sub)
+
+        val myExplanation = "出来るだけ浅く座り、背もたれにもたれない。身体を後ろに倒さないで、脚をまっすぐにしたまま、" +
+                "つま先が10cm以上になるよう、足(モモ)を上げる。\n膝を曲げないで、踵から上げる気持ちで。" +
+                "\n\n左右10秒ずつ３回が１セット。1セットが標準"
+
+        // すべての共通初期化を実行
+        initializeStandardSettings(myExplanation)
+
+
+        btnstart.setOnClickListener {
+            setUIForStarting(btnback, btnChangeTimes, btnyoutube)
+            isSaved = false
+            extimes = 1
+            num = -3
+            playSoundSingle(sndstr)
+            tv2.text = "始めます"
+            chronometer.base = SystemClock.elapsedRealtime()
+        }
+
+        btnstop.setOnClickListener {
+            setUIForStopping(btnback, btnChangeTimes, btnyoutube)
+        }
+
+        btnrerstart.setOnClickListener {
+            setUIForStarting(btnback, btnChangeTimes, btnyoutube)
+            soundPool.autoPause()
+        }
+
+        btnback.setOnClickListener {
+            finish()
+        }
+
+
+        btnyoutube.setOnClickListener {
+            // 固有のURLを渡すだけ
+            openYoutube("https://youtu.be/suG47Nx_H5A?t=42")
+        }
+        btnChangeTimes.setOnClickListener {
+            // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
+            openChangeTimes()
+        }
+
+
+        btnChangeTimes.setOnClickListener {
+            val intentC = Intent(this, MainActivity2::class.java)
+            intentC.putExtra("TEXT_KEY4", workMenu)
+            intentC.putExtra("TEXT_KEY5", _workoutId)
+            startActivity(intentC)
+        }
+
+        // これ一行で全ての音（sndstrやv1〜v15）が準備完了
+        loadAllStandardSounds()
+
+        chronometer.setOnChronometerTickListener {
+            num++
+            if (extimes <= maxextimes) {
+                tv.text = "$extimes/$maxextimes 回"
+                when (num) {
+                    1 -> {
+                        tv2.text = getString(R.string.up)
+                        playSoundSingle(sndup)
+                    }
+                    in 2..11 -> {
+                        tv2.text = "${num -1} 秒"
+                        val soundId = sounds.getOrNull(num - 2) ?: 0
+                        playSoundSingle(soundId)
+
+                    }
+                    12 -> {
+                        if (count) { extimes++; count = false } else { count = true }
+                        if (extimes <= maxextimes) {
+                            tv2.text = "足を変えて上げて"
+                            playSoundSingle(sndchangleg)
+                            num = 0
+                        }
+                    }
+                }
+            } else {
+                handleTrainingComplete(tv2, btnback, btnChangeTimes, btnyoutube) {
+                    isSaved = true
+                    playSoundSingle(sndend)
+                }
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadSettingsTick()
+        tv.text = "1/$maxextimes 回"
+    }
+
+}
