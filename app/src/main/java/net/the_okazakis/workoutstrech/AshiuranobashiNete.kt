@@ -6,18 +6,30 @@ import android.media.AudioAttributes
 import android.media.SoundPool
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.SystemClock
+import android.os.Handler
+import android.os.Looper
 import android.view.WindowManager
 import android.widget.Button
-import android.widget.Chronometer
-import android.widget.ImageButton
 import android.widget.TextView
+
 
 class AshiuranobashiNete : AppCompatActivity() {
 
+    // 秒数カウント
+    private var timeCount = 0
+    private var extimes: Int = 0
+    private var num: Int = 0
+    private var isSaved: Boolean = false
+    private var count: Boolean = false
+    private var maxextimes = 15 // Initial value
+    private var countVolume: Float = 1.0f
+    private var _workoutId = 6
+    private var workmenu: String = ""
+    private var speedTime = 1000L
     lateinit var soundPool: SoundPool
     private var sndstr = 0
     private var sndend = 0
+     private var sounds = mutableListOf<Int>()
     private var snd1 = 0 //１”いち”
     private var snd2 = 0 //２”に”
     private var snd3 = 0 //３”さん”
@@ -52,20 +64,84 @@ class AshiuranobashiNete : AppCompatActivity() {
     private var sndnon = 0 //無音
     private var changleg = 0  //足を変えて
     private var sndstretch = 0  //伸ばして
-
-    private var extimes: Int = 0
-    private var extimes2: Int = 0  //実施回数　何回したか
-    private var num: Int = 0
-    private var isSaved: Boolean = false   //保存済み
-
-    private var count:Boolean = false //最初の足？　　false：最初　true：足を変えた後
-
-    private var maxextimes = 1 // Initial value
-    private var _workoutId = 6
     private lateinit var _helper: DatabaseHelper
-
     lateinit var tv: TextView
+    lateinit var tv2: TextView
 
+    private lateinit var textmenu: TextView
+    private lateinit var tvexpla: TextView
+    private lateinit var btnback: Button
+    private lateinit var btnstart: Button
+    private lateinit var btnstop: Button
+    private lateinit var btnrerstart: Button
+    private lateinit var btnyoutube: Button
+    private lateinit var btnChangeTimes: Button
+    private lateinit var btnspeed: Button
+    private val handler = Handler(Looper.getMainLooper())
+
+    private val runnable = object : Runnable {
+        override fun run() {
+            timeCount++
+            num++
+            if (extimes < maxextimes) {
+                when (num) {
+                    1 -> {
+                        tv.text = "${extimes + 1}/$maxextimes セット"//表示用回数 extimesは0から
+                        tv2.text = getString(R.string.noba)
+                        soundPool.play(sndstretch, countVolume, countVolume, 1, 0, 1.0f)
+                    }
+                    2 -> {
+                        tv2.text = getString(R.string.keep30s)
+                        soundPool.play(sndkeep30s, countVolume, countVolume, 0, 0, 1.0f)
+                    }
+                    3 -> {
+                        soundPool.play(sndnon, countVolume, countVolume, 0, 0, 1.0f)
+                    }
+                    in 4..33 -> {
+                        if (count) {
+                            tv2.text = "${num - 3} 秒  👣"
+                        } else {
+                            tv2.text = "${num - 3} 秒"
+                        }
+                        soundPool.play(sounds[num - 4], countVolume, countVolume, 0, 0, 1.0f)
+                    }
+                    34 -> {
+                        if (count) {   //false →true 足が2回変わったら
+                            extimes++   //回数を増やす
+                            count = false    //
+                        } else {
+                            count = true
+                        }
+                        if (extimes + 1 <= maxextimes) {
+                            tv2.text = "足を変えて"
+                            soundPool.play(changleg, countVolume, countVolume, 0, 0, 1.0f)
+                            num = -4    //タオルをかける時間
+                        }
+                    }
+                    else -> {}
+                }
+                // ← これ追加
+                handler.postDelayed(this, 1000)
+            } else {
+                handler.removeCallbacks(this)
+                btnstart.isEnabled = true
+                btnstop.isEnabled = false
+                btnrerstart.isEnabled = false
+                btnback.isEnabled = true
+                btnChangeTimes.isEnabled = true
+                btnyoutube.isEnabled = true
+                btnspeed.isEnabled = true
+                if (!isSaved) {
+                    RecordManager.saveRecord(this@AshiuranobashiNete, "07${workmenu}")
+                    isSaved = true
+                }
+                speedTime = 1000L
+                tv2.text = getString(R.string.good_job)
+                soundPool.play(sndend, countVolume, countVolume, 0, 0, 1.0f)
+                extimes = 0
+            }
+        }
+    }
     private fun loadSettingsTick() {
         val db = _helper.writableDatabase
         val sql = "SELECT times FROM workouttimes WHERE _id = $_workoutId"
@@ -86,38 +162,26 @@ class AshiuranobashiNete : AppCompatActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         supportActionBar?.hide()
 
-        val chronometer = findViewById<Chronometer>(R.id.chronometer)
-        val countVolume: Float = intent.getFloatExtra("TEXT_KEY", 1.0f)
+        countVolume = intent.getFloatExtra("TEXT_KEY", 1.0f)
         val listnum: Int = intent.getIntExtra("TEXT_KEY2", 0)
-
         val lvmenu = resources.getStringArray(R.array.lv_menu)
-        val workmenu = lvmenu[listnum]
-        //val tv: TextView = findViewById(R.id.tv)
+        workmenu = lvmenu[listnum]
         tv = findViewById(R.id.tv)   // ← これが正しい
-        val tv2: TextView = findViewById(R.id.tv2)
+        tv2 = findViewById(R.id.tv2)
         val textmenu: TextView = findViewById(R.id.textmenu)
         val tvexpla: TextView = findViewById(R.id.tvexpla)
 
-        tvexpla.text = "膝の裏伸ばし（寝る）\n仰向けに寝て、片方の足の裏にタオルをかけ、ゆっくり自分の方に引き寄せる。膝の裏が伸びているのを感じる。30秒間キープ。反対の足も同様に。1回（左右1回ずつ）で1セット。1セット標準。"
+        tvexpla.text =
+            "膝の裏伸ばし（寝る）\n仰向けに寝て、片方の足の裏にタオルをかけ、ゆっくり自分の方に引き寄せる。膝の裏が伸びているのを感じる。30秒間キープ。反対の足も同様に。1回（左右1回ずつ）で1セット。1セット標準。"
 
-        val btnback: Button = findViewById(R.id.btnback)
-        val btnstart: Button = findViewById(R.id.btStart)
-        val btnstop: Button = findViewById(R.id.btStop)
-        val btnrerstart: Button = findViewById(R.id.btnrestart)
-        val btnyoutube: Button = findViewById(R.id.youtube)
-        val btnChangeTimes: Button = findViewById(R.id.button2)
-        btnChangeTimes.visibility = android.view.View.VISIBLE
-
-        btnChangeTimes.setOnClickListener {
-            val intent2 = Intent(this@AshiuranobashiNete, MainActivity2::class.java)
-            intent2.putExtra("TEXT_KEY4", workmenu)
-            intent2.putExtra("TEXT_KEY5", listnum)
-            startActivity(intent2)
-        }
-
-
-        //btnyoutube.visibility = android.view.View.GONE
-
+        btnback = findViewById(R.id.btnback)
+        btnstart = findViewById(R.id.btStart)
+        btnstop = findViewById(R.id.btStop)
+        btnrerstart = findViewById(R.id.btnrestart)
+        btnyoutube = findViewById(R.id.youtube)
+        btnChangeTimes = findViewById(R.id.button2)
+        btnspeed = findViewById(R.id.btspeed)
+        tv.text = "1/$maxextimes 回"
         textmenu.text = workmenu
         btnstop.isEnabled = false
         btnrerstart.isEnabled = false
@@ -128,7 +192,6 @@ class AshiuranobashiNete : AppCompatActivity() {
             .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
             .build()
         soundPool = SoundPool.Builder().setAudioAttributes(aa0).setMaxStreams(3).build()
-
         sndstr = soundPool.load(this, R.raw.start, 1)
         sndend = soundPool.load(this, R.raw.goodjob, 1)
         changleg = soundPool.load(this, R.raw.changeleg, 1)
@@ -165,29 +228,51 @@ class AshiuranobashiNete : AppCompatActivity() {
         sndkeep30s = soundPool.load(this, R.raw.keep30s, 1)
         sndnon = soundPool.load(this, R.raw.nosound, 1)
         sndstretch = soundPool.load(this, R.raw.stretch, 1)
+        sounds = mutableListOf(snd1, snd2, snd3, snd4, snd5, snd6, snd7, snd8, snd9, snd10,
+            snd11, snd12, snd13, snd14, snd15, snd16, snd17, snd18, snd19, snd20,
+            snd21, snd22, snd23, snd24, snd25, snd26, snd27, snd28, snd29, snd30 )
 
-        val sounds = listOf(snd1, snd2, snd3, snd4, snd5, snd6, snd7, snd8, snd9, snd10, snd11, snd12, snd13, snd14, snd15, snd16, snd17, snd18, snd19, snd20, snd21, snd22, snd23, snd24, snd25, snd26, snd27, snd28, snd29, snd30)
 
-        tv.text = "1/$maxextimes 回"
+        // 各種クリックリスナー
+        btnChangeTimes.setOnClickListener {
+            val intent2 = Intent(this@AshiuranobashiNete, MainActivity2::class.java)
+            intent2.putExtra("TEXT_KEY4", workmenu)
+            intent2.putExtra("TEXT_KEY5", listnum)
+            startActivity(intent2)
+        }
+
+        btnChangeTimes.setOnClickListener {
+            val intent2 = Intent(this@AshiuranobashiNete, MainActivity2::class.java)
+            intent2.putExtra("TEXT_KEY4", workmenu)
+            intent2.putExtra("TEXT_KEY5", listnum)
+            startActivity(intent2)
+        }
+
+        btnyoutube.setOnClickListener {
+            val intent = Intent(this@AshiuranobashiNete, Youtube::class.java)
+            val yID = "https://youtu.be/R0cIFc6S32U?t=12"
+            intent.putExtra("yID", yID) //URLを転送
+            startActivity(intent)
+        }
 
         btnstart.setOnClickListener {
+            loadSettingsTick()
             btnstart.isEnabled = false
             btnstop.isEnabled = true
             btnrerstart.isEnabled = false
             btnback.isEnabled = false
             btnChangeTimes.isEnabled = false
             btnyoutube.isEnabled = false
-            loadSettingsTick()
+            btnspeed.isEnabled = false
+            speedTime = 1000L
             isSaved = false
-
-            extimes = 0  //実施回数
-            extimes2 = extimes+1 //表示用回数
-            num = -5   //号令のカウント  始めます用に2秒
+            extimes = 0
+            num = -3
+            tv.text = "1/$maxextimes 回"
             tv2.text = "始めます"
             soundPool.play(sndstr, countVolume, countVolume, 0, 0, 1.0f)
-
-            chronometer.start()
-            chronometer.base = SystemClock.elapsedRealtime()
+            loadSettingsTick()
+            handler.post(runnable)
         }
 
         btnstop.setOnClickListener {
@@ -197,7 +282,9 @@ class AshiuranobashiNete : AppCompatActivity() {
             btnback.isEnabled = true
             btnChangeTimes.isEnabled = true
             btnyoutube.isEnabled = true
-            chronometer.stop()
+            btnspeed.isEnabled = true
+            speedTime = 1000L
+            handler.removeCallbacks(runnable)
         }
 
         btnrerstart.setOnClickListener {
@@ -207,91 +294,33 @@ class AshiuranobashiNete : AppCompatActivity() {
             btnback.isEnabled = false
             btnChangeTimes.isEnabled = false
             btnyoutube.isEnabled = false
-            chronometer.start()
+            btnspeed.isEnabled = false
+            handler.post(runnable) // タイマー再開
+        }
+        btnspeed.setOnClickListener {
+            btnstart.isEnabled = false
+            btnstop.isEnabled = true
+            btnrerstart.isEnabled = false
+            btnback.isEnabled = false
+            btnChangeTimes.isEnabled = false
+            btnyoutube.isEnabled = false
+            btnspeed.isEnabled = false
+            speedTime = 500L
+            handler.removeCallbacks(runnable)
+            handler.post(runnable)
         }
 
         btnback.setOnClickListener {
             soundPool.release()
             finish()
         }
-
-        //Youtubeのリンクを開く
-
-        btnyoutube.setOnClickListener {
-            val intent = Intent(this@AshiuranobashiNete, Youtube::class.java)
-            val yID = "https://youtu.be/R0cIFc6S32U?t=12"
-            intent.putExtra("yID", yID) //URLを転送
-            startActivity(intent)
-        }
-
         loadSettingsTick()
-        chronometer.setOnChronometerTickListener {
-            num++
-            if (extimes < maxextimes) {
-                when (num) {
-                    1 -> {
-                        tv.text = "${extimes + 1}/$maxextimes セット"//表示用回数 extimesは0から
-                        tv2.text = getString(R.string.noba)
-                        soundPool.play(sndstretch, countVolume, countVolume, 1, 0, 1.0f)
-
-                    }
-                    2 -> {
-                            tv2.text = getString(R.string.keep30s)
-                            soundPool.play(sndkeep30s, countVolume, countVolume, 0, 0, 1.0f)
-                        }
-                    3 -> {
-                        soundPool.play(sndnon, countVolume, countVolume, 0, 0, 1.0f)
-                    }
-
-                    in 4..33 -> {
-
-                        if (count) {tv2.text = "${num - 3} 秒  👣"}
-                        else {tv2.text = "${num - 3} 秒"}
-                        soundPool.play(sounds[num - 4], countVolume, countVolume, 0, 0, 1.0f)
-
-                    }
-                    34 -> {
-                            if (count) {   //false →true 足が2回変わったら
-                                extimes++   //回数を増やす
-                                count = false    //
-                            } else {
-                                count = true
-                            }
-                            if (extimes + 1 <= maxextimes) {
-                                tv2.text = "足を変えて"
-                                soundPool.play(changleg, countVolume, countVolume, 0, 0, 1.0f)
-
-                                num = -4    //タオルをかける時間
-                            }
-                        }
-                    else -> {}
-                }
-
-            } else {
-                chronometer.stop()
-                btnstart.isEnabled = true
-                btnstop.isEnabled = false
-                btnrerstart.isEnabled = false
-                btnback.isEnabled = true
-                btnChangeTimes.isEnabled = true
-                if (!isSaved) {
-                    RecordManager.saveRecord(this, "07${workmenu}")
-                    isSaved = true
-                }
-                tv2.text = getString(R.string.good_job)
-                soundPool.play(sndend, countVolume, countVolume, 0, 0, 1.0f)
-                extimes = 0
-            }
-        }
     }
-
     override fun onDestroy() {
         _helper.close()
         soundPool.release()
         super.onDestroy()
     }
-
-    // 👇ここに書く（onCreateの下）
     override fun onResume() {
         super.onResume()
         loadSettingsTick()

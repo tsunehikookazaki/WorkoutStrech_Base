@@ -6,18 +6,30 @@ import android.media.AudioAttributes
 import android.media.SoundPool
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.SystemClock
+import android.os.Handler
+import android.os.Looper
 import android.view.WindowManager
 import android.widget.Button
-import android.widget.Chronometer
-import android.widget.ImageButton
 import android.widget.TextView
 
+
 class Hukkin : AppCompatActivity() {
+
+    private var timeCount = 0
+    private var extimes: Int = 0
+    private var num: Int = 0
+    private var isSaved: Boolean = false
+    private var count: Boolean = false
+    private var maxextimes = 15 // Initial value
+    private var countVolume: Float = 1.0f
+    private var _workoutId = 8
+    private var workmenu: String = ""
+    private var speedTime = 1000L
 
     lateinit var soundPool: SoundPool
     private var sndstr = 0
     private var sndend = 0
+    private var sounds = mutableListOf<Int>()
     private var sndkeep20s = 0
     private var snd10re = 0
     private var slowup = 0
@@ -44,18 +56,101 @@ class Hukkin : AppCompatActivity() {
     private var snd19 = 0 //１９
     private var snd20 = 0 //20
     private var sndpi = 0 //pi
-
-    private var extimes: Int = 0
-    private var num: Int = 0
-    private var isSaved: Boolean = false
-
-    private var _workoutId = -1
+    lateinit var btnback: Button
+    lateinit var btnstart: Button
+    lateinit var btnstop: Button
+    lateinit var btnrerstart: Button
+    lateinit var btnyoutube: Button
+    lateinit var btnChangeTimes: Button
+    lateinit var btnspeed: Button
     private lateinit var _helper: DatabaseHelper
-    private var maxextimes =3
     private var listnumLocal = 0
     private var isStart : Boolean = true
 
     lateinit var tv: TextView
+    lateinit var tv2: TextView
+    private val handler = Handler(Looper.getMainLooper())
+
+    private val runnable = object : Runnable {
+        override fun run() {
+            timeCount++
+            num++
+            if (extimes <= maxextimes) {
+                when (num){
+                    in -10..-4 -> {
+                        if (!isStart) {
+                            tv2.text = "${num * (-1)}"
+                        }
+                    }
+                    in -3..-1 ->{
+                        if(!isStart){
+                            tv2.text = "${num * (-1)}"
+                            soundPool.play(sounds[num*(-1)-1], countVolume, countVolume, 0, 0, 1.0f)
+                        }
+                    }
+                    0 ->{
+                        if(!isStart){
+                            tv2.text = "${num * (-1)}"
+                            soundPool.play(sndpi, countVolume, countVolume, 0, 0, 1.0f)
+                        }
+                    }
+                    1 -> {
+                        tv.text = "$extimes/$maxextimes セット"
+
+                        tv2.text = getString(R.string.slow_up)
+                        soundPool.play(slowup, countVolume, countVolume, 0, 0, 1.0f)
+                    }
+                    2 -> {
+                        tv2.text = "20秒キープ"
+                        soundPool.play(sndkeep20s, countVolume, countVolume, 0, 0, 1.0f)
+
+                    }
+                    in 4..23 -> {  //3から23まで
+                        tv2.text = "${num-3}"
+                        soundPool.play(sounds[num-4], countVolume, countVolume, 0, 0, 1.0f)
+                    }
+
+                    24 -> {
+                        tv2.text = getString(R.string.slow_down)
+                        soundPool.play(slowdown, countVolume, countVolume, 0, 0, 1.0f)
+                    }
+                    25 -> {
+                        extimes++
+                        if (extimes <= maxextimes) {
+                            num = -(11) // 10s relax
+                            tv2.text = getString(R.string.relax10)
+                            soundPool.play(snd10re, countVolume, countVolume, 0, 0, 1.0f)
+                            isStart = false
+                        } else {
+                            // Done
+                        }
+                    }
+                    else -> {}
+                }
+                // ← これ追加
+                handler.postDelayed(this, 1000)
+
+            } else {
+                handler.removeCallbacks(this)
+                btnstart.isEnabled = true
+                btnstop.isEnabled = false
+                btnrerstart.isEnabled = false
+                btnback.isEnabled = true
+                btnChangeTimes.isEnabled = true
+                btnyoutube.isEnabled = true
+                btnspeed.isEnabled = true
+                speedTime = 1000L
+                if (!isSaved) {
+                    RecordManager.saveRecord(this@Hukkin, "09${workmenu}")
+                    isSaved = true
+
+                tv2.text = getString(R.string.good_job)
+                soundPool.play(sndend, countVolume, countVolume, 0, 0, 1.0f)
+            }
+        }
+    }
+}
+
     private fun loadSettingsTick() {
         val db = _helper.writableDatabase
         val sql = "SELECT * FROM workouttimes WHERE _id = $_workoutId"
@@ -79,28 +174,29 @@ class Hukkin : AppCompatActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         supportActionBar?.hide()
 
-        val chronometer = findViewById<Chronometer>(R.id.chronometer)
-        val countVolume: Float = intent.getFloatExtra("TEXT_KEY", 1.0f)
+        countVolume = intent.getFloatExtra("TEXT_KEY", 1.0f)
         val listnum: Int = intent.getIntExtra("TEXT_KEY2", 0)
         listnumLocal = listnum
         _workoutId = listnum
 
         val lvmenu = resources.getStringArray(R.array.lv_menu)
-        val workmenu = lvmenu[listnum]
+        workmenu = lvmenu[listnum]
         //val tv: TextView = findViewById(R.id.tv)
         tv = findViewById(R.id.tv)
-        val tv2: TextView = findViewById(R.id.tv2)
+        tv2 = findViewById(R.id.tv2)
         val textmenu: TextView = findViewById(R.id.textmenu)
         val tvexpla: TextView = findViewById(R.id.tvexpla)
-        tvexpla.text = "床に寝て、両足を床につかないよう10cm位上げ、20秒キープ\n\n高く上げると効果が薄い" +
-                "\n\n20秒で1セット、３セット標準"
+        tvexpla.text =
+            "床に寝て、両足を床につかないよう10cm位上げ、20秒キープ\n\n高く上げると効果が薄い" +
+                    "\n\n20秒で1セット、３セット標準"
 
-        val btnback: Button = findViewById(R.id.btnback)
-        val btnstart: Button = findViewById(R.id.btStart)
-        val btnstop: Button = findViewById(R.id.btStop)
-        val btnrerstart: Button = findViewById(R.id.btnrestart)
-        val btnyoutube: Button = findViewById(R.id.youtube)
-        val btnChangeTimes: Button = findViewById(R.id.button2)
+        btnback = findViewById(R.id.btnback)
+        btnstart = findViewById(R.id.btStart)
+        btnstop = findViewById(R.id.btStop)
+        btnrerstart = findViewById(R.id.btnrestart)
+         btnyoutube = findViewById(R.id.youtube)
+        btnChangeTimes = findViewById(R.id.button2)
+        btnspeed = findViewById(R.id.btspeed)
 
         textmenu.text = workmenu
         btnstop.isEnabled = false
@@ -144,10 +240,44 @@ class Hukkin : AppCompatActivity() {
         snd19 = soundPool.load(this, R.raw.v19, 1)
         snd20 = soundPool.load(this, R.raw.v20, 1)
         sndpi = soundPool.load(this, R.raw.pi, 1)
-        val sounds = listOf(snd1, snd2, snd3, snd4, snd5, snd6, snd7, snd8, snd9, snd10, snd11, snd12, snd13, snd14, snd15, snd16, snd17, snd18, snd19, snd20)
+        sounds = mutableListOf(
+            snd1,
+            snd2,
+            snd3,
+            snd4,
+            snd5,
+            snd6,
+            snd7,
+            snd8,
+            snd9,
+            snd10,
+            snd11,
+            snd12,
+            snd13,
+            snd14,
+            snd15,
+            snd16,
+            snd17,
+            snd18,
+            snd19,
+            snd20
+        )
         snd10re = soundPool.load(this, R.raw.relax10sec, 1)
         sndkeep20s = soundPool.load(this, R.raw.keep20s, 1)
 
+
+        btnChangeTimes.setOnClickListener {
+            val intent2 = Intent(this@Hukkin, MainActivity2::class.java)
+            intent2.putExtra("TEXT_KEY4", workmenu)
+            intent2.putExtra("TEXT_KEY5", listnum)
+            startActivity(intent2)
+        }
+        btnyoutube.setOnClickListener {
+            val intent = Intent(this@Hukkin, Youtube::class.java)
+            val yID = "https://youtu.be/npIGK0blwyk"
+            intent.putExtra("yID", yID) //URLを転送
+            startActivity(intent)
+        }
 
         btnstart.setOnClickListener {
             btnstart.isEnabled = false
@@ -155,19 +285,17 @@ class Hukkin : AppCompatActivity() {
             btnrerstart.isEnabled = false
             btnback.isEnabled = false
             btnChangeTimes.isEnabled = false
+            btnspeed.isEnabled = false
             btnyoutube.isEnabled = false
-
+            speedTime = 1000L
             isSaved = false
             extimes = 1
-
-
             tv.text = "1/$maxextimes セット"
             isStart = true
             num = -3            // ← ここから「3,2,1」開始
             tv2.text = "始めます"
             soundPool.play(sndstr, countVolume, countVolume, 0, 0, 1.0f)
-            chronometer.base = SystemClock.elapsedRealtime()
-            chronometer.start()
+            handler.post(runnable) // タイマー再開
 
         }
 
@@ -178,7 +306,9 @@ class Hukkin : AppCompatActivity() {
             btnback.isEnabled = true
             btnChangeTimes.isEnabled = true
             btnyoutube.isEnabled = true
-            chronometer.stop()
+            btnspeed.isEnabled = true
+            speedTime = 1000L
+            handler.removeCallbacks(runnable)
         }
 
         btnrerstart.setOnClickListener {
@@ -188,92 +318,29 @@ class Hukkin : AppCompatActivity() {
             btnback.isEnabled = false
             btnChangeTimes.isEnabled = false
             btnyoutube.isEnabled = false
-            chronometer.start()
+            btnspeed.isEnabled = false
+            handler.post(runnable) // タイマー再開
         }
 
+        btnspeed.setOnClickListener {
+            btnstart.isEnabled = false
+            btnstop.isEnabled = true
+            btnrerstart.isEnabled = false
+            btnback.isEnabled = false
+            btnChangeTimes.isEnabled = false
+            btnyoutube.isEnabled = false
+            btnspeed.isEnabled = false
+            speedTime = 500L
+            handler.removeCallbacks(runnable)
+            handler.post(runnable)
+        }
         btnback.setOnClickListener {
             soundPool.release()
             finish()
         }
 
-        btnyoutube.setOnClickListener {
-            val intent = Intent(this@Hukkin, Youtube::class.java)
-            val yID = "https://youtu.be/npIGK0blwyk"
-            intent.putExtra("yID", yID) //URLを転送
-            startActivity(intent)
-        }
-
         loadSettingsTick()
-        chronometer.setOnChronometerTickListener {
-            num++
-            if (extimes <= maxextimes) {
-                when (num){
-                    in -10..-4 -> {
-                        if (!isStart) {
-                            tv2.text = "${num * (-1)}"
-                        }
-                    }
-                    in -3..-1 ->{
-                        if(!isStart){
-                            tv2.text = "${num * (-1)}"
-                            soundPool.play(sounds[num*(-1)-1], countVolume, countVolume, 0, 0, 1.0f)
-                        }
-                    }
-                    0 ->{
-                        if(!isStart){
-                            tv2.text = "${num * (-1)}"
-                            soundPool.play(sndpi, countVolume, countVolume, 0, 0, 1.0f)
-                        }
-                    }
-                     1 -> {
-                        tv.text = "$extimes/$maxextimes セット"
 
-                        tv2.text = getString(R.string.slow_up)
-                        soundPool.play(slowup, countVolume, countVolume, 0, 0, 1.0f)
-                    }
-                    2 -> {
-                        tv2.text = "20秒キープ"
-                             soundPool.play(sndkeep20s, countVolume, countVolume, 0, 0, 1.0f)
-
-                    }
-                    in 4..23 -> {  //3から23まで
-                        tv2.text = "${num-3}"
-                        soundPool.play(sounds[num-4], countVolume, countVolume, 0, 0, 1.0f)
-                    }
-
-                    24 -> {
-                        tv2.text = getString(R.string.slow_down)
-                        soundPool.play(slowdown, countVolume, countVolume, 0, 0, 1.0f)
-                    }
-                    25 -> {
-                        extimes++
-                        if (extimes <= maxextimes) {
-                            num = -(11) // 10s relax
-                            tv2.text = getString(R.string.relax10)
-                            soundPool.play(snd10re, countVolume, countVolume, 0, 0, 1.0f)
-                            isStart = false
-                        } else {
-                           // Done
-                        }
-                    }
-                    else -> {}
-                }
-            } else {
-                chronometer.stop()
-                btnstart.isEnabled = true
-                btnstop.isEnabled = false
-                btnrerstart.isEnabled = false
-                btnback.isEnabled = true
-                btnChangeTimes.isEnabled = true
-                btnyoutube.isEnabled = true
-                if (!isSaved) {
-                    RecordManager.saveRecord(this, "09${workmenu}")
-                    isSaved = true
-                }
-                tv2.text = getString(R.string.good_job)
-                soundPool.play(sndend, countVolume, countVolume, 0, 0, 1.0f)
-            }
-        }
     }
     override fun onDestroy() {
         _helper.close()

@@ -6,16 +6,28 @@ import android.media.AudioAttributes
 import android.media.SoundPool
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.SystemClock
+import android.os.Handler
+import android.os.Looper
 import android.view.WindowManager
 import android.widget.Button
-import android.widget.Chronometer
-import android.widget.ImageButton
 import android.widget.TextView
+
 
 class Momomae : AppCompatActivity() {
 
+    private var timeCount = 0
+    private var extimes: Int = 0
+    private var num: Int = 0
+    private var isSaved: Boolean = false
+    private var count: Boolean = false
+    private var maxextimes = 15 // Initial value
+    private var countVolume: Float = 1.0f
+    private var _workoutId = 22
+    private var workmenu: String = ""
+    private var speedTime = 1000L
+
     lateinit var soundPool: SoundPool
+    private var sounds = mutableListOf<Int>()
     private var sndstr = 0
     private var sndend =0
     private var changleg = 0
@@ -51,17 +63,84 @@ class Momomae : AppCompatActivity() {
     private var snd30 = 0 //３０
     private var sndkeep30s = 0 //30秒キープ
     private var  sndhikitsuke = 0
-    private var extimes: Int = 1
-    private var num: Int = 0
-    private var isSaved: Boolean = false
     private var firstleg: Boolean = true  //最初の足
 
     private var firsttime = true  //１回目
-    private var maxextimes = 1 // Initial value
-    private var _workoutId = 22
     private lateinit var _helper: DatabaseHelper
 
     lateinit var tv: TextView
+    lateinit var tv2: TextView
+    lateinit var btnback: Button
+    lateinit var btnstart: Button
+    lateinit var btnstop: Button
+    lateinit var btnrerstart: Button
+    lateinit var btnyoutube: Button
+    lateinit var btnChangeTimes: Button
+    lateinit var btnspeed: Button
+
+
+    private val handler = Handler(Looper.getMainLooper())
+    private val runnable = object : Runnable {
+        override fun run() {
+            timeCount++
+
+            num++
+            if (extimes <= maxextimes) {
+                when (num) {
+                    1 -> {
+                        if (!firsttime) {
+                            tv2.text = "足を変えて"
+                            soundPool.play(changleg, countVolume, countVolume, 0, 0, 1.0f)
+                        }
+                        firsttime = false
+                        tv.text = "${extimes}/$maxextimes セット"
+                    }
+                    2 ->{
+                        tv2.text = "足をお尻に引き付け前ももを伸ばす"
+                        soundPool.play(sndhikitsuke, countVolume, countVolume, 0, 0, 1.0f)
+                    }
+                    3 -> {
+                        tv2.text = getString(R.string.keep30s)
+                        soundPool.play(sndkeep30s, countVolume, countVolume, 0, 0, 1.0f)
+                    }
+                    in 4..33 -> {
+                        tv2.text = "${num-3}"
+                        soundPool.play(sounds[num-4],countVolume, countVolume, 0, 0, 1.0f)
+                    }
+
+                    34 -> {
+                        num = 0
+                        if(!firstleg)
+                        {  //足を変えた場合
+                            extimes ++
+                        }
+                        firstleg = !firstleg    //足を変える
+                    }
+                }
+                // ← これ追加
+                handler.postDelayed(this, 1000)
+
+            } else {
+                handler.removeCallbacks(this)
+                btnstart.isEnabled = true
+                btnstop.isEnabled = false
+                btnrerstart.isEnabled = false
+                btnChangeTimes.isEnabled = true
+                btnback.isEnabled = true
+                btnyoutube.isEnabled = true
+                btnspeed.isEnabled = true
+                speedTime = 1000L
+                if (!isSaved) {
+                    RecordManager.saveRecord(this@Momomae, "23${workmenu}")
+                    isSaved = true
+                }
+                tv2.text = getString(R.string.good_job)
+                soundPool.play(sndend, countVolume, countVolume, 0, 0, 1.0f)
+                extimes = 0
+            }
+        }
+    }
+
     private fun loadSettingsTick() {
         val db = _helper.writableDatabase
         val sql = "SELECT times FROM workouttimes WHERE _id = $_workoutId"
@@ -82,35 +161,30 @@ class Momomae : AppCompatActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         supportActionBar?.hide()
 
-        val chronometer = findViewById<Chronometer>(R.id.chronometer)
-        val countVolume: Float = intent.getFloatExtra("TEXT_KEY", 1.0f)
+        countVolume = intent.getFloatExtra("TEXT_KEY", 1.0f)
         val listnum: Int = intent.getIntExtra("TEXT_KEY2", 0)
 
         val lvmenu = resources.getStringArray(R.array.lv_menu)
-        val workmenu = lvmenu[listnum]
+        workmenu = lvmenu[listnum]
         //val tv: TextView = findViewById(R.id.tv)
         tv = findViewById(R.id.tv)
-        val tv2: TextView = findViewById(R.id.tv2)
+        tv2 = findViewById(R.id.tv2)
         val textmenu: TextView = findViewById(R.id.textmenu)
         val tvexpla: TextView = findViewById(R.id.tvexpla)
 
-        tvexpla.text = "前モモ伸ばしし\n片方の足を後ろに引き、足を持ってかかとをおしりに引き付ける。前モモが伸びているのを感じる。30秒間キープ。反対の足も同様に。1回（左右1回ずつ）で1セット。1セット標準。" +
-                "足が持てない場合はタオルなどを使って引き付ける。モモを後ろに引くとより効果的。　足が横に出ないように、前に出ないように、腰が反らないように注意する。"
+        tvexpla.text =
+            "前モモ伸ばしし\n片方の足を後ろに引き、足を持ってかかとをおしりに引き付ける。前モモが伸びているのを感じる。30秒間キープ。反対の足も同様に。1回（左右1回ずつ）で1セット。1セット標準。" +
+                    "足が持てない場合はタオルなどを使って引き付ける。モモを後ろに引くとより効果的。　足が横に出ないように、前に出ないように、腰が反らないように注意する。"
 
-        val btnback: Button = findViewById(R.id.btnback)
-        val btnstart: Button = findViewById(R.id.btStart)
-        val btnstop: Button = findViewById(R.id.btStop)
-        val btnrerstart: Button = findViewById(R.id.btnrestart)
-        val btnyoutube: Button = findViewById(R.id.youtube)
-        val btnChangeTimes: Button = findViewById(R.id.button2)
+        btnback = findViewById(R.id.btnback)
+        btnstart = findViewById(R.id.btStart)
+        btnstop = findViewById(R.id.btStop)
+        btnrerstart = findViewById(R.id.btnrestart)
+         btnyoutube = findViewById(R.id.youtube)
+        btnChangeTimes = findViewById(R.id.button2)
+        btnspeed = findViewById(R.id.btspeed)
+
         btnChangeTimes.visibility = android.view.View.VISIBLE
-
-        btnChangeTimes.setOnClickListener {
-            val intent2 = Intent(this@Momomae, MainActivity2::class.java)
-            intent2.putExtra("TEXT_KEY4", workmenu)
-            intent2.putExtra("TEXT_KEY5", listnum)
-            startActivity(intent2)
-        }
 
 
         textmenu.text = workmenu
@@ -158,11 +232,52 @@ class Momomae : AppCompatActivity() {
         snd30 = soundPool.load(this, R.raw.v30, 1)
         sndkeep30s = soundPool.load(this, R.raw.keep30s, 1)
         sndhikitsuke = soundPool.load(this, R.raw.hikitsuke, 1)
+        sounds = mutableListOf(
+            snd1,
+            snd2,
+            snd3,
+            snd4,
+            snd5,
+            snd6,
+            snd7,
+            snd8,
+            snd9,
+            snd10,
+            snd11,
+            snd12,
+            snd13,
+            snd14,
+            snd15,
+            snd16,
+            snd17,
+            snd18,
+            snd19,
+            snd20,
+            snd21,
+            snd22,
+            snd23,
+            snd24,
+            snd25,
+            snd26,
+            snd27,
+            snd28,
+            snd29,
+            snd30
+        )
 
+        btnChangeTimes.setOnClickListener {
+            val intent2 = Intent(this@Momomae, MainActivity2::class.java)
+            intent2.putExtra("TEXT_KEY4", workmenu)
+            intent2.putExtra("TEXT_KEY5", listnum)
+            startActivity(intent2)
+        }
 
-        val sounds = listOf(snd1, snd2, snd3, snd4, snd5, snd6, snd7, snd8, snd9, snd10, snd11, snd12, snd13, snd14, snd15, snd16, snd17, snd18, snd19, snd20, snd21, snd22, snd23, snd24, snd25, snd26, snd27, snd28, snd29, snd30)
-
-
+        btnyoutube.setOnClickListener {
+            val intent = Intent(this@Momomae, Youtube::class.java)
+            val yID = "https://youtu.be/sRvbL3eflz0"
+            intent.putExtra("yID", yID) //ボリュームの値を転送
+            startActivity(intent)
+        }
 
         btnstart.setOnClickListener {
             btnstart.isEnabled = false
@@ -171,17 +286,17 @@ class Momomae : AppCompatActivity() {
             btnback.isEnabled = false
             btnChangeTimes.isEnabled = false
             btnyoutube.isEnabled = false
-
+            btnspeed.isEnabled = false
+            speedTime = 1000L
             isSaved = false
             firsttime = true
             firstleg = true
             extimes = 1
             num = -3
-
             tv2.text = "始めます"
             soundPool.play(sndstr, countVolume, countVolume, 0, 0, 1.0f)
-            chronometer.start()
-            chronometer.base = SystemClock.elapsedRealtime()
+            loadSettingsTick()
+            handler.post(runnable)
         }
 
         btnstop.setOnClickListener {
@@ -191,7 +306,9 @@ class Momomae : AppCompatActivity() {
             btnChangeTimes.isEnabled = true
             btnback.isEnabled = true
             btnyoutube.isEnabled = true
-            chronometer.stop()
+            btnspeed.isEnabled = true
+            speedTime = 1000L
+            handler.removeCallbacks(runnable)
         }
 
         btnrerstart.setOnClickListener {
@@ -200,74 +317,28 @@ class Momomae : AppCompatActivity() {
             btnrerstart.isEnabled = false
             btnChangeTimes.isEnabled = false
             btnback.isEnabled = false
-            chronometer.start()
+            btnyoutube.isEnabled = false
+            btnspeed.isEnabled = false
+            handler.post(runnable) // タイマー再開
         }
 
+         btnspeed.setOnClickListener {
+            btnstart.isEnabled = false
+            btnstop.isEnabled = true
+            btnrerstart.isEnabled = false
+            btnback.isEnabled = false
+            btnChangeTimes.isEnabled = false
+            btnyoutube.isEnabled = false
+            btnspeed.isEnabled = false
+            speedTime = 500L
+            handler.removeCallbacks(runnable)
+            handler.post(runnable)
+        }
         btnback.setOnClickListener {
             soundPool.release()
             finish()
         }
-
-        btnyoutube.setOnClickListener {
-            val intent = Intent(this@Momomae, Youtube::class.java)
-            val yID = "https://youtu.be/sRvbL3eflz0"
-            intent.putExtra("yID",yID ) //ボリュームの値を転送
-            startActivity(intent)
-        }
-
         loadSettingsTick()
-        chronometer.setOnChronometerTickListener {
-
-            num++
-            if (extimes <= maxextimes) {
-                when (num) {
-                    1 -> {
-                        if (!firsttime) {
-                            tv2.text = "足を変えて"
-                            soundPool.play(changleg, countVolume, countVolume, 0, 0, 1.0f)
-                        }
-                        firsttime = false
-                        tv.text = "${extimes}/$maxextimes セット"
-                    }
-                    2 ->{
-                        tv2.text = "足をお尻に引き付け前ももを伸ばす"
-                        soundPool.play(sndhikitsuke, countVolume, countVolume, 0, 0, 1.0f)
-                    }
-                    3 -> {
-                        tv2.text = getString(R.string.keep30s)
-                        soundPool.play(sndkeep30s, countVolume, countVolume, 0, 0, 1.0f)
-                    }
-                    in 4..33 -> {
-                        tv2.text = "${num-3}"
-                        soundPool.play(sounds[num-4],countVolume, countVolume, 0, 0, 1.0f)
-                    }
-
-                    34 -> {
-                        num = 0
-                            if(!firstleg)
-                                {  //足を変えた場合
-                                    extimes ++
-                                }
-                        firstleg = !firstleg    //足を変える
-                    }
-                }
-            } else {
-                chronometer.stop()
-                btnstart.isEnabled = true
-                btnstop.isEnabled = false
-                btnrerstart.isEnabled = false
-                btnChangeTimes.isEnabled = true
-                btnback.isEnabled = true
-                btnyoutube.isEnabled = true
-                if (!isSaved) {
-                    RecordManager.saveRecord(this, "23${workmenu}")
-                    isSaved = true
-                }
-                tv2.text = getString(R.string.good_job)
-                soundPool.play(sndend, countVolume, countVolume, 0, 0, 1.0f)
-                extimes = 0
-            }
-        }
     }
 
     override fun onDestroy() {

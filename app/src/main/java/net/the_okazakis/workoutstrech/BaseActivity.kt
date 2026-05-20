@@ -6,15 +6,15 @@ import android.media.SoundPool
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
-import android.widget.Chronometer
-import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import android.os.Handler
+import android.os.Looper
 
 open class BaseActivity : AppCompatActivity() {
 
     // --- 共通のView ---
-    protected lateinit var chronometer: Chronometer
+
     protected lateinit var tv: TextView
     protected lateinit var tv2: TextView
     protected lateinit var textmenu: TextView
@@ -25,11 +25,14 @@ open class BaseActivity : AppCompatActivity() {
     protected lateinit var btnrerstart: Button
     protected lateinit var btnyoutube: Button
     protected lateinit var btnChangeTimes: Button
+    protected lateinit var btnspeed: Button
 
     // --- 共通の変数 ---
+    protected  val handler = Handler(Looper.getMainLooper())
     protected lateinit var soundPool: SoundPool
     protected lateinit var _helper: DatabaseHelper
     protected var _workoutId = 0
+    protected var timeCount = 0
     protected var workMenu: String = ""
     protected var countVolume: Float = 1.0f
     protected var maxextimes = 2
@@ -219,7 +222,7 @@ open class BaseActivity : AppCompatActivity() {
     }
 
     private fun setupActivityUI(title: String, explanation: String) {
-        chronometer = findViewById(R.id.chronometer)
+
         tv = findViewById(R.id.tv)
         tv2 = findViewById(R.id.tv2)
         textmenu = findViewById(R.id.textmenu)
@@ -228,8 +231,9 @@ open class BaseActivity : AppCompatActivity() {
         btnstart = findViewById(R.id.btStart)
         btnstop = findViewById(R.id.btStop)
         btnrerstart = findViewById(R.id.btnrestart)
-        btnyoutube = findViewById(R.id.youtube)
+         btnyoutube = findViewById(R.id.youtube)
         btnChangeTimes = findViewById(R.id.button2)
+        btnspeed = findViewById(R.id.btspeed)
 
         textmenu.text = title
         tvexpla.text = explanation
@@ -269,7 +273,6 @@ open class BaseActivity : AppCompatActivity() {
         btnstop.isEnabled = true
         btnrerstart.isEnabled = false
         otherButtons.forEach { it.isEnabled = false }
-        chronometer.start()
     }
 
     protected fun setUIForStopping(vararg otherButtons: View) {
@@ -277,12 +280,11 @@ open class BaseActivity : AppCompatActivity() {
         btnstop.isEnabled = false
         btnrerstart.isEnabled = true
         otherButtons.forEach { it.isEnabled = true }
-        chronometer.stop()
         soundPool.autoPause() // 停止時も音をクリア
     }
 
     protected fun handleTrainingComplete(tvMessage: TextView, vararg otherButtons: View, onSaveComplete: () -> Unit) {
-        chronometer.stop()
+
         btnstart.isEnabled = true
         btnstop.isEnabled = false
         btnrerstart.isEnabled = false
