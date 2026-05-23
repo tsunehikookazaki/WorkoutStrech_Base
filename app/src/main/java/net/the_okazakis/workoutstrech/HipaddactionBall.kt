@@ -13,44 +13,7 @@ import android.widget.Button
 import android.widget.TextView
 
 
-class HipaddactionBall : AppCompatActivity() {
-    private var timeCount = 0
-    private var extimes: Int = 0
-    private var num: Int = 0
-    private var isSaved: Boolean = false
-    private var count: Boolean = false
-    private var maxextimes = 15 // Initial value
-    private var countVolume: Float = 1.0f
-    private var _workoutId = 14
-    private var workmenu: String = ""
-    private var speedTime = 1000L
-
-    lateinit var soundPool: SoundPool
-    private var sounds = mutableListOf<Int>()
-    private var sndstr = 0
-    private var sndend = 0
-    private var snd1 = 0 //１”いち”
-    private var snd2 = 0 //２”に”
-    private var snd3 = 0 //３”さん”
-    private var snd4 = 0 //４”よん”
-    private var snd5 = 0 //５”ご”
-    private var sndpi = 0 //Pi
-    private var sndtsubushite = 0
-    private var sndbreak = 0
-    private var snd10re = 0
-    private var isStart= true      // スタートか
-    lateinit var tv: TextView
-    lateinit var tv2: TextView
-    private lateinit var _helper: DatabaseHelper
-    private var listnumLocal = 0
-    private lateinit var btnback: Button
-    private lateinit var btnstart: Button
-    private lateinit var btnstop: Button
-    private lateinit var btnrerstart: Button
-    private lateinit var btnyoutube: Button
-    private lateinit var btnChangeTimes: Button
-    private lateinit var btnspeed: Button
-    private val handler = Handler(Looper.getMainLooper())
+class HipaddactionBall : BaseActivity() {
 
     private val runnable = object : Runnable {
         override fun run() {
@@ -62,7 +25,7 @@ class HipaddactionBall : AppCompatActivity() {
                     -5 -> {
                         if (!isStart) {
                             tv2.text = "ちょっと休憩"
-                            soundPool.play(sndbreak, countVolume, countVolume, 0, 0, 1.0f)
+                            playSoundSingle(sndbreak)
                         }
                     }
 
@@ -75,27 +38,20 @@ class HipaddactionBall : AppCompatActivity() {
                     in -3..-1 -> {
                         if (!isStart) {
                             tv2.text = "${num * (-1)}"
-                            soundPool.play(
-                                sounds[num * (-1) - 1],
-                                countVolume,
-                                countVolume,
-                                0,
-                                0,
-                                1.0f
-                            )
+                            playSoundSingle(sounds[num * (-1) - 1])
                         }
                     }
 
                     0 -> {
                         if (!isStart) {
                             tv2.text = "${num * (-1)}"
-                            soundPool.play(sndpi, countVolume, countVolume, 0, 0, 1.0f)
+                            playSoundSingle(sndpi)
                         }
                     }
 
                     in 1..50 -> {
                         tv2.text = getString(R.string.tubu) + "  $num/50 回 "
-                        soundPool.play(sndtsubushite, countVolume, countVolume, 1, 0, 1.0f)
+                        playSoundSingle(sndtsubushite)
                     }
 
                     51 -> {
@@ -111,190 +67,74 @@ class HipaddactionBall : AppCompatActivity() {
                 handler.postDelayed(this, 1000)
 
             } else {
-                handler.removeCallbacks(this)
-                btnstart.isEnabled = true
-                btnstop.isEnabled = false
-                btnrerstart.isEnabled = false
-                btnback.isEnabled = true
-                btnChangeTimes.isEnabled = true
-                btnyoutube.isEnabled = true
-                btnspeed.isEnabled = true
-                if (!isSaved) {
-                    RecordManager.saveRecord(this@HipaddactionBall, "15${workmenu}")
+                handleTrainingComplete(tv2, btnback, btnChangeTimes, btnyoutube) {
                     isSaved = true
-                    tv2.text = getString(R.string.good_job)
-                    soundPool.play(sndend, countVolume, countVolume, 0, 0, 1.0f)
+                    playSoundSingle(sndend)
                 }
             }
         }
     }
 
-    private fun loadSettingsTick() {
-        val db = _helper.writableDatabase
-        val sql = "SELECT * FROM workouttimes WHERE _id = $_workoutId"
-        val cursor = db.rawQuery(sql, null)
-        if (cursor.moveToNext()) {
-            val t = cursor.getString(cursor.getColumnIndex("times"))
-            val idxReps = cursor.getColumnIndex("reps")
-            val r = if (idxReps != -1) cursor.getString(idxReps) ?: "50" else "50"
-            maxextimes = t.toIntOrNull() ?: 3    // maxSetsをsqlで見つけたｔに DBに無ければ10
-        }
-        cursor.close()
-    }
-
-
-    @SuppressLint("SetTextI18n", "MissingInflatedId")
-    override fun onCreate(savedInstanceState: Bundle?) {
+     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         _helper = DatabaseHelper(applicationContext)  // ←これ追加
         setContentView(R.layout.activity_sub)
 
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        supportActionBar?.hide()
-
-        countVolume = intent.getFloatExtra("TEXT_KEY", 1.0f)
-        val listnum: Int = intent.getIntExtra("TEXT_KEY2", 0)
-        listnumLocal = listnum
-        _workoutId = listnum
-
-        val lvmenu = resources.getStringArray(R.array.lv_menu)
-        workmenu = lvmenu[listnum]
-        //val tv: TextView = findViewById(R.id.tv)
-        tv = findViewById(R.id.tv)
-        tv2 = findViewById(R.id.tv2)
-        val textmenu: TextView = findViewById(R.id.textmenu)
-        val tvexpla: TextView = findViewById(R.id.tvexpla)
-
-        tvexpla.text =
+         //説明文
+         val myExplanation =
             "椅子に座って(寝ながらやってもOK)、膝の間にボール(枕、クッションでもOK)をはさむ。\nモモに力を入れてボールを挟んでつぶす。力をぬいて緩める。再度つぶして、力を抜く" +
                     "これをリズミカルに繰り返す。\n\n50回で1セット　3セット標準" +
                     "\n\nボールは100均一で"
 
-        btnback = findViewById(R.id.btnback)
-        btnstart = findViewById(R.id.btStart)
-        btnstop = findViewById(R.id.btStop)
-        btnrerstart = findViewById(R.id.btnrestart)
-         btnyoutube = findViewById(R.id.youtube)
-        btnChangeTimes = findViewById(R.id.button2)
-        btnspeed = findViewById(R.id.btspeed)
+         // すべての共通初期化を実行
+         initializeStandardSettings(myExplanation)
+         // 音声をロード
+         loadAllStandardSounds()
 
-        textmenu.text = workmenu
-        btnstop.isEnabled = false
-        btnrerstart.isEnabled = false
+         // 各種クリックリスナー
+         btnstart.setOnClickListener {
+             setUIForStarting(runnable,-1,btnback, btnChangeTimes, btnyoutube)
+         }
 
-        btnChangeTimes.setOnClickListener {
-            val intent2 = Intent(this@HipaddactionBall, MainActivity2::class.java)
-            intent2.putExtra("TEXT_KEY4", workmenu)
-            intent2.putExtra("TEXT_KEY5", listnum)
-            startActivity(intent2)
-        }
 
-        val aa0 = AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_GAME)
-            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-            .build()
-        soundPool = SoundPool.Builder().setAudioAttributes(aa0).setMaxStreams(3).build()
+         btnstop.setOnClickListener {
+             setUIForStopping(btnback, btnChangeTimes, btnyoutube)
+             handler.removeCallbacks(runnable)
+         }
 
-        sndstr = soundPool.load(this, R.raw.start, 1)
-        sndend = soundPool.load(this, R.raw.goodjob, 1)
-        sndtsubushite = soundPool.load(this, R.raw.tsubushite, 1)
-        sndbreak = soundPool.load(this, R.raw.takeabreak, 1)
-        sndpi = soundPool.load(this, R.raw.pi, 1)
-        snd1 = soundPool.load(this, R.raw.v1, 1)
-        snd2 = soundPool.load(this, R.raw.v2, 1)
-        snd3 = soundPool.load(this, R.raw.v3, 1)
-        snd4 = soundPool.load(this, R.raw.v4, 1)
-        snd5 = soundPool.load(this, R.raw.v5, 1)
-        snd10re = soundPool.load(this, R.raw.relax10sec, 1)
-        sounds = mutableListOf(snd1, snd2, snd3, snd4, snd5)
-        snd10re = soundPool.load(this, R.raw.relax10sec, 1)
-
-        // 各種クリックリスナー
-        btnChangeTimes.setOnClickListener {
-            val intent2 = Intent(this@HipaddactionBall, MainActivity2::class.java)
-            intent2.putExtra("TEXT_KEY4", workmenu)
-            intent2.putExtra("TEXT_KEY5", listnum)
-            startActivity(intent2)
-        }
-
-        btnyoutube.setOnClickListener {
-            val intent = Intent(this@HipaddactionBall, Youtube::class.java)
-            val yID = "https://youtu.be/n7Munc_C_Xo?t=3"
-            intent.putExtra("yID", yID) //URLを転送
-            startActivity(intent)
-        }
-
-        btnstart.setOnClickListener {
-            btnstart.isEnabled = false
-            btnstop.isEnabled = true
-            btnrerstart.isEnabled = false
-            btnback.isEnabled = false
-            btnChangeTimes.isEnabled = false
-            btnyoutube.isEnabled = false
-            btnspeed.isEnabled = false
-            isSaved = false
-            isStart = true
-            extimes = 1
-            num = -3
-            tv2.text = "始めます"
-            soundPool.play(sndstr, countVolume, countVolume, 0, 0, 1.0f)
-            loadSettingsTick()
-            handler.post(runnable)
-
-        }
-
-        btnstop.setOnClickListener {
-            btnstart.isEnabled = true
-            btnstop.isEnabled = false
-            btnrerstart.isEnabled = true
-            btnback.isEnabled = true
-            btnChangeTimes.isEnabled = true
-            btnyoutube.isEnabled = true
-            btnspeed.isEnabled = true
-            handler.removeCallbacks(runnable)
-        }
-
-        btnrerstart.setOnClickListener {
-            btnstart.isEnabled = false
-            btnstop.isEnabled = true
-            btnrerstart.isEnabled = false
-            btnback.isEnabled = false
-            btnChangeTimes.isEnabled = false
-            btnyoutube.isEnabled = false
-            btnspeed.isEnabled = false
-            handler.post(runnable) // タイマー再開
-        }
+         btnrerstart.setOnClickListener {
+             restartTraining(runnable,btnback,btnChangeTimes,btnyoutube)
+         }
 
          btnspeed.setOnClickListener {
-            btnstart.isEnabled = false
-            btnstop.isEnabled = true
-            btnrerstart.isEnabled = false
-            btnback.isEnabled = false
-            btnChangeTimes.isEnabled = false
-            btnyoutube.isEnabled = false
-            btnspeed.isEnabled = false
-            speedTime = 500L
-            handler.removeCallbacks(runnable)
-            handler.post(runnable)
-        }
-        btnback.setOnClickListener {
-            soundPool.release()
-            finish()
-        }
+             setUIForSpeedStarting(runnable, -1, btnback,btnyoutube, btnChangeTimes)
+         }
 
-        loadSettingsTick()
+         btnback.setOnClickListener {
+             finish()
+         }
+         //Youtubeのリンクを開く
+         btnyoutube.setOnClickListener {
+             // 固有のURLを渡すだけ
+             openYoutube("https://youtu.be/n7Munc_C_Xo?t=3")
+         }
 
-    }
 
+         btnChangeTimes.setOnClickListener {
+             // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
+             openChangeTimes()
+         }
+         loadSettingsTick()
+     }
     override fun onDestroy() {
         _helper.close()
         soundPool.release()
         super.onDestroy()
     }
-    // 👇ここに書く（onCreateの下）
+
     override fun onResume() {
         super.onResume()
         loadSettingsTick()
-        tv.text = "1/$maxextimes 回"   // ← UIも更新
+        tv.text = "1/${maxextimes} 回"   // ← UIも更新
     }
 }

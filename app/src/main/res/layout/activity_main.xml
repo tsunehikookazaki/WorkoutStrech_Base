@@ -34,10 +34,11 @@
 
     <Button
         android:id="@+id/buttonLog"
-        android:layout_width="wrap_content"
+        android:layout_width="110dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:backgroundTint="#6EA6D4"
+        android:background="@drawable/btn_back_selector"
+        android:backgroundTint="#1A73F8"
         android:text="@string/exrecord"
         android:textColor="#FFFFFF"
         android:textStyle="bold"

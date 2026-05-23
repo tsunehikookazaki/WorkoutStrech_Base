@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Handler
 import android.os.Looper
+import android.widget.ImageButton
 
 open class BaseActivity : AppCompatActivity() {
 
@@ -23,9 +24,10 @@ open class BaseActivity : AppCompatActivity() {
     protected lateinit var btnstart: Button
     protected lateinit var btnstop: Button
     protected lateinit var btnrerstart: Button
-    protected lateinit var btnyoutube: Button
+    //protected lateinit var btnyoutube: Button
     protected lateinit var btnChangeTimes: Button
     protected lateinit var btnspeed: Button
+    protected lateinit var btnyoutube: ImageButton
 
     // --- 共通の変数 ---
     protected  val handler = Handler(Looper.getMainLooper())
@@ -33,14 +35,24 @@ open class BaseActivity : AppCompatActivity() {
     protected lateinit var _helper: DatabaseHelper
     protected var _workoutId = 0
     protected var timeCount = 0
-    protected var workMenu: String = ""
+    protected var workmenu: String = ""
     protected var countVolume: Float = 1.0f
     protected var maxextimes = 2
+    protected var maxReps = 5
     protected var extimes = 0
     protected var num = 0
+    protected var nn = 0
+    protected var speedTime = 1000L
+    protected var normalspeedTime = 1000L
+    protected var speedspeedTime = 700L
+    protected var isSpeed = false
     protected var count = false
     protected var isSaved = false
-
+    protected var isUp = true
+    protected var isFirsttime = true
+    protected var choki = false
+    protected var isFirstleg = false
+    protected var isStart = true
     // --- 共通のサウンドID ---
     protected var sndstr = 0
     protected var sndend = 0
@@ -93,6 +105,7 @@ open class BaseActivity : AppCompatActivity() {
     // 秒数用はリストにまとめる（個別の snd1..15 は削除！）
     // 音源IDを保持するリスト（Ashiage.ktなどで使う用）
     protected val sounds: MutableList<Int> = mutableListOf()
+    protected val soundskeep: MutableList<Int> = mutableListOf()
 
     // 音源を一括ロードする共通メソッド
     protected fun loadAllStandardSounds() {
@@ -157,6 +170,14 @@ open class BaseActivity : AppCompatActivity() {
                 sounds.add(soundPool.load(this, resId, 1))
             }
         }
+        // keep1s〜keep30s を自動でロードしてリストに追加
+        soundskeep.clear()
+        for (i in 1..30) {
+            val resId = resources.getIdentifier("keep${i}s", "raw", packageName)
+            if (resId != 0) {
+                soundskeep.add(soundPool.load(this, resId, 1))
+            }
+        }
     }
 
     /**
@@ -189,11 +210,11 @@ open class BaseActivity : AppCompatActivity() {
 
         // メニュー名取得
         val menuArray = resources.getStringArray(R.array.lv_menu)
-        workMenu = menuArray.getOrElse(_workoutId) { "" }
+        workmenu = menuArray.getOrElse(_workoutId) { "" }
 
 
         // UI紐付け
-        setupActivityUI(workMenu, explanation)
+        setupActivityUI(workmenu, explanation)
 
         // 目標回数取得
         loadSettingsTick()
@@ -216,7 +237,7 @@ open class BaseActivity : AppCompatActivity() {
     // 設定変更画面へ遷移する共通メソッド
     protected fun openChangeTimes() {
         val intentC = Intent(this, MainActivity2::class.java)
-        intentC.putExtra("TEXT_KEY4", workMenu) // initializeStandardSettingsで取得済みの変数
+        intentC.putExtra("TEXT_KEY4", workmenu) // initializeStandardSettingsで取得済みの変数
         intentC.putExtra("TEXT_KEY5", _workoutId)
         startActivity(intentC)
     }
@@ -231,7 +252,7 @@ open class BaseActivity : AppCompatActivity() {
         btnstart = findViewById(R.id.btStart)
         btnstop = findViewById(R.id.btStop)
         btnrerstart = findViewById(R.id.btnrestart)
-         btnyoutube = findViewById(R.id.youtube)
+        btnyoutube = findViewById(R.id.youtube)
         btnChangeTimes = findViewById(R.id.button2)
         btnspeed = findViewById(R.id.btspeed)
 
@@ -251,36 +272,119 @@ open class BaseActivity : AppCompatActivity() {
             soundPool.play(soundId, countVolume, countVolume, 1, 0, 1.0f)
         }
     }
-
     open fun loadSettingsTick() {
-        maxextimes = getDatabaseMaxTimes(_workoutId)
-    }
 
-    protected fun getDatabaseMaxTimes(workoutId: Int): Int {
+        val (times, reps) = getDatabaseSettings(_workoutId)
+
+        maxextimes = times
+        maxReps = reps
+    }
+    //データーベースから値を持ってくる
+    protected fun getDatabaseSettings(workoutId: Int): Pair<Int, Int> {
         var times = 10
+        var reps = 5
         val db = _helper.readableDatabase
-        val cursor = db.rawQuery("SELECT times FROM workouttimes WHERE _id = ?", arrayOf(workoutId.toString()))
+        val cursor = db.rawQuery(
+            "SELECT times, reps FROM workouttimes WHERE _id = ?",
+            arrayOf(workoutId.toString())
+        )
         if (cursor.moveToNext()) {
             times = cursor.getString(0).toIntOrNull() ?: 10
+            reps = cursor.getString(1).toIntOrNull() ?: 5
         }
         cursor.close()
-        return times
+        return Pair(times, reps)
     }
 
     // --- ボタン状態制御 ---
-    protected fun setUIForStarting(vararg otherButtons: View) {
+    protected fun setUIForStarting(runnable: Runnable,startNum: Int,vararg otherButtons: View)
+    {
         btnstart.isEnabled = false
         btnstop.isEnabled = true
         btnrerstart.isEnabled = false
-        otherButtons.forEach { it.isEnabled = false }
+        btnspeed.isEnabled = false
+
+        otherButtons.forEach {
+            it.isEnabled = false
+        }
+
+        // トレーニング状態初期化
+        isSaved = false
+        isStart = true
+        isSpeed = false
+        extimes = 1
+        nn = 0
+        timeCount = 0
+        num = startNum
+        speedTime = normalspeedTime
+
+        // 音と表示
+        playSoundSingle(sndstr)
+        tv2.text = "始めます"
+
+        // Runnable開始
+        handler.removeCallbacks(runnable)
+        handler.post(runnable)
     }
+
+    protected fun restartTraining(
+        runnable: Runnable,
+        vararg otherButtons: View
+    ) {
+        btnstart.isEnabled = false
+        btnstop.isEnabled = true
+        btnrerstart.isEnabled = false
+        btnspeed.isEnabled = false
+        otherButtons.forEach {
+            it.isEnabled = false
+        }
+
+        handler.removeCallbacks(runnable)
+        handler.post(runnable)
+    }
+
 
     protected fun setUIForStopping(vararg otherButtons: View) {
         btnstart.isEnabled = true
         btnstop.isEnabled = false
         btnrerstart.isEnabled = true
+        btnspeed.isEnabled = true
         otherButtons.forEach { it.isEnabled = true }
         soundPool.autoPause() // 停止時も音をクリア
+    }
+
+    // speedモード開始
+    protected fun setUIForSpeedStarting(
+        runnable: Runnable,
+        startNum: Int,
+        vararg otherButtons: View
+    ) {
+        btnstart.isEnabled = false
+        btnstop.isEnabled = true
+        btnrerstart.isEnabled = false
+        btnspeed.isEnabled = false
+
+        otherButtons.forEach {
+            it.isEnabled = false
+        }
+
+        // トレーニング状態初期化
+        isSaved = false
+        isStart = true
+        isSpeed = true
+        extimes = 1
+        nn = 0
+        timeCount = 0
+        num = startNum
+
+        // 音と表示
+        playSoundSingle(sndstr)
+        tv2.text = "始めます"
+        // speed専用
+        speedTime = speedspeedTime
+        // Runnable開始
+        handler.removeCallbacks(runnable)
+        handler.post(runnable)
     }
 
     protected fun handleTrainingComplete(tvMessage: TextView, vararg otherButtons: View, onSaveComplete: () -> Unit) {
@@ -290,7 +394,8 @@ open class BaseActivity : AppCompatActivity() {
         btnrerstart.isEnabled = false
         otherButtons.forEach { it.isEnabled = true }
         if (!isSaved) {
-            RecordManager.saveRecord(this, "171$workMenu")
+            RecordManager.saveRecord(this, "${_workoutId}$workmenu")
+            isSaved = true
             tvMessage.text = getString(R.string.good_job)
             onSaveComplete()
         }

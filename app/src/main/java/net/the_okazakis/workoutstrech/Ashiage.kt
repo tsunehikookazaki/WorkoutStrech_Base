@@ -1,8 +1,6 @@
 package net.the_okazakis.workoutstrech
 
-import android.content.Intent
 import android.os.Bundle
-import android.os.SystemClock
 
 class Ashiage : BaseActivity() {
 
@@ -64,13 +62,13 @@ class Ashiage : BaseActivity() {
 
 
         btnstart.setOnClickListener {
-            setUIForStarting(btnback, btnChangeTimes, btnyoutube)
-            isSaved = false
-            extimes = 1
-            num = -3
-            playSoundSingle(sndstr)
-            tv2.text = "始めます"
-            handler.post(runnable)
+            setUIForStarting(
+                runnable,
+                -3,
+                btnback,
+                btnChangeTimes,
+                btnyoutube
+            )
         }
 
         btnstop.setOnClickListener {
@@ -78,14 +76,18 @@ class Ashiage : BaseActivity() {
         }
 
         btnrerstart.setOnClickListener {
-            setUIForStarting(btnback, btnChangeTimes, btnyoutube)
-            soundPool.autoPause()
+            setUIForStarting(
+                runnable,
+                -3,
+                btnback,
+                btnChangeTimes,
+                btnyoutube
+            )
         }
 
         btnback.setOnClickListener {
             finish()
         }
-
 
         btnyoutube.setOnClickListener {
             // 固有のURLを渡すだけ
@@ -95,17 +97,7 @@ class Ashiage : BaseActivity() {
             // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
             openChangeTimes()
         }
-
-        /**
-        btnChangeTimes.setOnClickListener {
-        val intentC = Intent(this, MainActivity2::class.java)
-        intentC.putExtra("TEXT_KEY4", workMenu)
-        intentC.putExtra("TEXT_KEY5", _workoutId)
-        startActivity(intentC)
-        }
-         **/
-        // これ一行で全ての音（sndstrやv1〜v15）が準備完了
-        loadAllStandardSounds()
+       loadAllStandardSounds()
     }
         override fun onResume() {
             super.onResume()
