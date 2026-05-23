@@ -62,6 +62,10 @@ class Kamatasquatwide :  BaseActivity() {
                 "膝が内側に入らないように気を付ける。" +
                 "呼吸を止めない\n\n10回で1セット。1セット標準"
 
+        val StandardText ="10回で1セット。1セット標準。"
+        val masxlimit = 99
+        val maxRep =30
+
         // すべての共通初期化を実行
         initializeStandardSettings(myExplanation)
         // 音声をロード
@@ -95,7 +99,7 @@ class Kamatasquatwide :  BaseActivity() {
         }
         btnChangeTimes.setOnClickListener {
             // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
-            openChangeTimes()
+            openChangeTimes(StandardText, masxlimit,maxRep)
         }
 
         loadSettingsTick()

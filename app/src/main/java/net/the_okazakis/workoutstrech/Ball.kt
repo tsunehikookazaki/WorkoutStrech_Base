@@ -48,7 +48,11 @@ class Ball : BaseActivity() {
 
         //説明文
         val myExplanation =
-            "膝裏ボール潰し\n椅子に座り、膝の裏に小さめのボール(または丸めたタオル)を挟み、ぎゅーっと5〜10秒間押しつぶす。10秒3回で1セット。1セット標準。"
+            "膝裏ボール潰し\n椅子に座り、膝の裏に小さめのボール(または丸めたタオル)を挟み、ぎゅーっと10秒間押しつぶす。10秒3回で1セット。1セット標準。"
+
+        val StandardText = "10秒3回で1セット。1セット標準。\n運動回数　1回標準　最大99回"
+        val masxlimit = 99
+        val maxRep =30
 
         // すべての共通初期化を実行
         initializeStandardSettings(myExplanation)
@@ -85,7 +89,7 @@ class Ball : BaseActivity() {
 
         btnChangeTimes.setOnClickListener {
             // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
-            openChangeTimes()
+            openChangeTimes(StandardText, masxlimit,maxRep)
         }
         loadSettingsTick()
     }

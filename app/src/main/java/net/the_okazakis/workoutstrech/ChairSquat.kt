@@ -65,6 +65,10 @@ class ChairSquat :  BaseActivity() {
         val myExplanation =
             "椅子に座り（腰掛ける程度）、両足を肩幅に広げ、ゆっくり立つ。立ち上がったら、ゆっくり（座るイメージで）腰を下ろす。\n膝がつま先より出ないように。背中が曲がらないように。\n\n10回で1セット。1セット標準。"
 
+        val StandardText = "10回で1セット。1セット標準"
+        val masxlimit = 99
+        val maxRep =30
+
         // すべての共通初期化を実行
         initializeStandardSettings(myExplanation)
         // 音声をロード
@@ -99,7 +103,7 @@ class ChairSquat :  BaseActivity() {
         }
         btnChangeTimes.setOnClickListener {
             // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
-            openChangeTimes()
+            openChangeTimes(StandardText, masxlimit,maxRep)
         }
         loadSettingsTick()
     }

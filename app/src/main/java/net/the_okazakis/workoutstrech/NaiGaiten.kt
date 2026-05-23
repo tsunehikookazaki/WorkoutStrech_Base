@@ -44,6 +44,11 @@ class NaiGaiten : BaseActivity() {
             "内もも(内転筋)のストレッチ。\n床に座り、足を前に出し足裏を合わせる。または、床に寝て両膝を曲げて揃える。" +
                     "\n両足を外に倒し足を広げる。広げた時に少し手で押さえ、力を加え足を開く。" +
                     "\n\n10回が1セット。1セットが標準"
+
+        val StandardText ="10回で1セット、1セット（回）標準　　最大99回"
+        val masxlimit = 99
+        val maxRep =30
+
         // すべての共通初期化を実行
         initializeStandardSettings(myExplanation)
         // 音声をロード
@@ -77,7 +82,7 @@ class NaiGaiten : BaseActivity() {
         }
         btnChangeTimes.setOnClickListener {
             // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
-            openChangeTimes()
+            openChangeTimes(StandardText, masxlimit,maxRep)
         }
 
         loadSettingsTick()

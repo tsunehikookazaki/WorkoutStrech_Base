@@ -3,27 +3,21 @@ package net.the_okazakis.workoutstrech
 import android.annotation.SuppressLint
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
-import android.widget.ImageButton
 import android.widget.TextView
 
 /**
  * 選択された各種目の目標セット数や反復回数（reps）を設定・保存するための設定画面Activity。
  * データベース（workouttimes）から現在の設定を読み込み、ユーザーの入力に応じて更新します。
  */
-private lateinit var _helper: DatabaseHelper
 class MainActivity2 : AppCompatActivity() {
 
     /**
      * 選択されたトレーニングの主キーIDを表すプロパティ。
      */
     private var _workoutId = -1
-
-    /**
-     * 選択されたトレーニング名を表すプロパティ。
-     */
-    //private var _workoutName = ""
 
     /**
      * データベースヘルパーオブジェクト。
@@ -37,119 +31,184 @@ class MainActivity2 : AppCompatActivity() {
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        _helper = DatabaseHelper(applicationContext)  // ←これ追加
+        _helper = DatabaseHelper(applicationContext)
         setContentView(R.layout.activity_main2)
 
-        /**
-         * 画面が表示されたらデータベースから回数を読み込み表示する
-         *
-         */
-        val tvWorkoutName: TextView = findViewById(R.id.tvWorkoutName) //トレーニング名
-        val workmenu: String? = intent.getStringExtra("TEXT_KEY4")  //元の画面からトレーニング名を受け取る
-        tvWorkoutName.text = workmenu  //トレーニング名を表示
-
-        val dbid: Int = intent.getIntExtra("TEXT_KEY5",0)  //元の画面からメニュー値を受け取る
-
-
-        _workoutId=dbid     //トレーニング番号
-
-        val db0 = _helper.writableDatabase
-        val sql0 = "SELECT * FROM workouttimes WHERE _id = $_workoutId"
-        // SQLの実行。
-        val cursor0 = db0.rawQuery(sql0, null)
-
-
-        var times0 :String
-        var reps0 :String
-        // SQL実行の戻り値であるカーソルオブジェクトをループさせてデータベース内のデータを取得。
-        while(cursor0.moveToNext()) {
-            // カラムのインデックス値を取得。
-            val idxTimes = cursor0.getColumnIndex("times")
-            val idxReps = cursor0.getColumnIndex("reps")
-            // カラムのインデックス値を元に実際のデータを取得。
-            times0 =  cursor0.getString(idxTimes)
-            reps0 =  cursor0.getString(idxReps) ?: "15"
-            val etTimes = findViewById<EditText>(R.id.etTimes)
-            val etReps = findViewById<EditText>(R.id.etReps)
-            etTimes.setText(times0)
-            etReps.setText(reps0)
-
-
-        }
-
-        cursor0.close()
-
+        // --- ① すべてのViewを取得して一括宣言（ここで1回だけ宣言！） ---
+        val tvWorkoutName: TextView = findViewById(R.id.tvWorkoutName)
+        val etTimes = findViewById<EditText>(R.id.etTimes)
         val etReps = findViewById<EditText>(R.id.etReps)
         val tvRepsLabel = findViewById<TextView>(R.id.textViewRepsLabel)
         val btnSave: Button = findViewById(R.id.btnSave)
 
-        // 動的設定に対応したインデックス（lv_menu基準） 　番号は0から　
-        val dynamicIds = listOf( 12 )
+        // プラスマイナスボタンの取得
+        val btnTimesMinus = findViewById<Button>(R.id.btnTimesMinus)
+        val btnTimesPlus = findViewById<Button>(R.id.btnTimesPlus)
+        val btnRepsMinus = findViewById<Button>(R.id.btnRepsMinus)
+        val btnRepsPlus = findViewById<Button>(R.id.btnRepsPlus)
+
+        // --- ② インテントデータの処理とトレーニング名表示 ---
+        val workmenu: String? = intent.getStringExtra("TEXT_KEY4")
+        tvWorkoutName.text = workmenu
+
+        val dbid: Int = intent.getIntExtra("TEXT_KEY5", 0)
+        _workoutId = dbid
+
+        // 👇【ここから追記】送られてきた「標準の文章」を取得して表示する
+        val stdText = intent.getStringExtra("STD_TEXT") ?: "設定されていません"
+        val tvStandardLabel = findViewById<TextView>(R.id.tvStandardLabel)
+
+        // 画面に「【標準】 左右10秒ずつ 3回（1セット）」のように表示
+        tvStandardLabel.text = "$stdText"
+
+        // 👇【ここから追加】送られてきた制限値（上限）を取得する（指定がない場合は30をデフォルトに）
+        val maxLimit = intent.getIntExtra("MAX_LIMIT", 99)
+        val maxRepsLimit = intent.getIntExtra("MAX_REPS_LIMIT", 99) // 👇【追加】
+
+        // --- ③ データベースから初期値を読み込んでEditTextにセット ---
+        val db0 = _helper.writableDatabase
+        val sql0 = "SELECT * FROM workouttimes WHERE _id = $_workoutId"
+        val cursor0 = db0.rawQuery(sql0, null)
+
+        var times0: String
+        var reps0: String
+        while (cursor0.moveToNext()) {
+            val idxTimes = cursor0.getColumnIndex("times")
+            val idxReps = cursor0.getColumnIndex("reps")
+
+            times0 = cursor0.getString(idxTimes)
+            reps0 = cursor0.getString(idxReps) ?: "15"
+
+            // 読み込んだ値が、送られてきた上限値を超えていたら警告して制限する
+            val timesInt = times0.toIntOrNull() ?: 0
+            if (timesInt > maxLimit) {
+                times0 = maxLimit.toString()
+                // 👇【追加】画面が開いた時に上限オーバーならアラートを出す
+                showLimitAlert(maxLimit)
+            }
+        // 👇【追加】2つ目の値（Reps）の制限
+            val repsInt = reps0.toIntOrNull() ?: 0
+            if (repsInt > maxRepsLimit) {
+                reps0 = maxRepsLimit.toString()
+                showLimitAlert(maxRepsLimit) // 2つ目の値が超えていた場合もアラートを出す
+            }
+
+            etTimes.setText(times0)
+            etReps.setText(reps0)
+        }
+        cursor0.close()
+
+        // --- ④ 特定の種目（ID 12以外）でRepsエリアを非表示にする動的制御 ---
+        val dynamicIds = listOf(12)
 
         if (!dynamicIds.contains(_workoutId)) {
-            // 固定動作の場合は1セットの回数入力を非表示にする
-            etReps.visibility = android.view.View.GONE
-            tvRepsLabel.visibility = android.view.View.GONE
+            // Repsのテキストと入力欄を非表示
+            etReps.visibility = View.GONE
+            tvRepsLabel.visibility = View.GONE
 
-            // 保存ボタンの位置を調整（etTimesの下に配置）
+            // Reps用のプラスマイナスボタンも一緒に非表示にする
+            btnRepsMinus.visibility = View.GONE
+            btnRepsPlus.visibility = View.GONE
+
+            // 保存ボタンの位置を調整
             val params = btnSave.layoutParams as androidx.constraintlayout.widget.ConstraintLayout.LayoutParams
-            params.topToBottom = R.id.etTimes
+            params.topToBottom = R.id.layoutTimes
             btnSave.layoutParams = params
         }
 
-        /**
-         * 保存ボタンがタップされた時の処理。
-         * 入力されたセット数、リピート回数を取得し、古いデータを削除した上でデータベースに新規保存（INSERT）します。
-         */
+        // --- ⑤ 保存ボタン（btnSave）がタップされた時の処理 ---
         btnSave.setOnClickListener {
+            // 【修正】ここで再宣言されていた val etTimes と val etReps の2行を削除しました
 
-            val etTimes = findViewById<EditText>(R.id.etTimes)
-            val etReps = findViewById<EditText>(R.id.etReps)
             // 入力された回数を取得。
             var times = etTimes.text.toString()
-            if (times==""){times="2"}   //間違って消してしまった時
+            if (times == "") { times = "2" }
 
             var reps = etReps.text.toString()
-            if (reps==""){reps="15"}
+            if (reps == "") { reps = "15" }
 
-            // データベースヘルパーオブジェクトからデータベース接続オブジェクトを取得。
             val db = _helper.writableDatabase
 
-            // まず、リストで選択されたカクテルのメモデータを削除。その後インサートを行う。
-            // 削除用SQL文字列を用意。
+            // 古いデータを削除
             val sqlDelete = "DELETE FROM workouttimes WHERE _id = ?"
-            // SQL文字列を元にプリペアドステートメントを取得。
             var stmt = db.compileStatement(sqlDelete)
-            // 変数のバイド。
             stmt.bindLong(1, _workoutId.toLong())
-
-            // 削除SQLの実行。
             stmt.executeUpdateDelete()
 
-
-            // インサート用SQL文字列の用意。
-          //  val sqlInsert = "INSERT INTO workouttimes (_id, name, times) VALUES (?, ?, ?)"
-            val sqlInsert = "INSERT INTO workouttimes (_id,  times, reps) VALUES (?, ?, ?)"
-            // SQL文字列を元にプリペアドステートメントを取得。
+            // 新規データをインサート
+            val sqlInsert = "INSERT INTO workouttimes (_id, times, reps) VALUES (?, ?, ?)"
             stmt = db.compileStatement(sqlInsert)
-            // 変数のバイド。
             stmt.bindLong(1, _workoutId.toLong())
-           // stmt.bindString(2, _workoutName)
-           // stmt.bindString(3, times)
             stmt.bindString(2, times)
             stmt.bindString(3, reps)
-            // インサートSQLの実行。
             stmt.executeInsert()
 
-
-            // 保存ボタンを取得。
-            val btnSave = findViewById<Button>(R.id.btnSave)
-            // 保存ボタンをタップできないように変更。
             btnSave.isEnabled = false
-
             this.finish()
         }
+
+        // --- ⑥ プラスマイナスボタンのクリックリスナーを設定 ---
+        // 【修正】ここで再宣言されていた val btnTimesMinus や val etTimes などの宣言部をすべて削除しました
+
+        // 回数（Times）用のプラスマイナス制御
+        btnTimesMinus.setOnClickListener {
+            var current = etTimes.text.toString().toIntOrNull() ?: 0
+            if (current > 1) {
+                current--
+                etTimes.setText(current.toString())
+            }
+        }
+
+        btnTimesPlus.setOnClickListener {
+            var current = etTimes.text.toString().toIntOrNull() ?: 0
+            // 👇【修正】固定の 99 ではなく、送られてきた maxLimit を上限にする
+            if (current < maxLimit) {
+                current++
+                etTimes.setText(current.toString())
+            } else {
+                // 👇【追加】すでに上限値なのにさらに「＋」を押した場合にアラートを出す
+                showLimitAlert(maxLimit)
+
+            }
+        }
+
+        // セット数/秒数（Reps）用のプラスマイナス制御
+        btnRepsMinus.setOnClickListener {
+            var current = etReps.text.toString().toIntOrNull() ?: 0
+            if (current > 1) {
+                current--
+                etReps.setText(current.toString())
+            }
+        }
+
+        // セット数/秒数（Reps）用のプラス制御（👇ここを修正）
+        btnRepsPlus.setOnClickListener {
+            var current = etReps.text.toString().toIntOrNull() ?: 0
+
+            // 👇 送られてきた maxRepsLimit を上限として判定する
+            if (current < maxRepsLimit) {
+                current++
+                etReps.setText(current.toString())
+            } else {
+                // 👇 上限に達しているのに「＋」が押されたらアラートを出す
+                showLimitAlert(maxRepsLimit)
+            }
+        }
     }
+
+    /**
+     * 上限値を超えた際のアラートダイアログを表示する関数
+     */
+    private fun showLimitAlert(limit: Int) {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("設定値のエラー")
+            .setMessage("${limit}以下にしてください")
+            .setPositiveButton("OK", null) // 閉じるだけのボタン
+            .show()
+    }
+
+
+
     /**
      * Activityが破棄される直前に呼び出されます。
      * データベースへの接続（DatabaseHelper）を安全に閉じます。
@@ -159,8 +218,3 @@ class MainActivity2 : AppCompatActivity() {
         super.onDestroy()
     }
 }
-
-
-
-
-

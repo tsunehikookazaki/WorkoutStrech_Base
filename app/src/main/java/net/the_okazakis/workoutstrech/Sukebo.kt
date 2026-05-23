@@ -48,6 +48,10 @@ class Sukebo : BaseActivity() {
                 "つま先、かかとがスケボーから離れないように。\n\n10回で1セット。1セットが標準。" +
                 "\nスケボーの代わりにタオルでも出来る"
 
+        val StandardText ="10回で1セット、1セット標準"
+        val masxlimit = 99
+        val maxRep =30
+
         // すべての共通初期化を実行
         initializeStandardSettings(myExplanation)
         // 音声をロード
@@ -81,7 +85,7 @@ class Sukebo : BaseActivity() {
         }
         btnChangeTimes.setOnClickListener {
             // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
-            openChangeTimes()
+            openChangeTimes(StandardText, masxlimit,maxRep)
         }
 
         loadSettingsTick()

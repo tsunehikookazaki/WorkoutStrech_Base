@@ -93,7 +93,12 @@ class HipLift : BaseActivity() {
                     "\nレベル1：両手を体側につく\nレベル2：手は胸におく" +
                     "\nレベル３：片足を上げて、反対の足に載せ、手はつく\nレベル４：片足を上げ伸ばし、両手は胸におく。" +
                     "上げた足は反対の足と同じ高さをキープ。両手を伸ばし、上にあげて掌をつけるのが最高。" +
+                    "\nSPEEDボタンでスピードアップ"+
                     "\n\n左右それぞれ20回が1セット。1セットが標準　　片足を上げた場合はそれぞれ１セットずつ、合計２セット"
+
+        val StandardText = "左右それぞれ20回が1セット。\n1セット（回）が標準\n片足を上げた場合はそれぞれ１セットずつ\n合計２セット(回)が標準\n最大99回\nSPEEDボタンでも同じ"
+        val masxlimit = 99
+        val maxRep =30
 
         // すべての共通初期化を実行
         initializeStandardSettings(myExplanation)
@@ -130,7 +135,7 @@ class HipLift : BaseActivity() {
 
         btnChangeTimes.setOnClickListener {
             // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
-            openChangeTimes()
+            openChangeTimes(StandardText, masxlimit,maxRep)
         }
 
        loadSettingsTick()

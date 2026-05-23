@@ -50,7 +50,7 @@ open class BaseActivity : AppCompatActivity() {
     protected var isSaved = false
     protected var isUp = true
     protected var isFirsttime = true
-    protected var choki = false
+    protected var choki = true
     protected var isFirstleg = false
     protected var isStart = true
     // --- 共通のサウンドID ---
@@ -201,7 +201,7 @@ open class BaseActivity : AppCompatActivity() {
 
 
     // --- 初期化：Intent・DB・UI・SoundPoolを一括設定 ---
-    protected fun initializeStandardSettings(explanation: String) {
+    protected fun initializeStandardSettings(explanation: String,) {
         _helper = DatabaseHelper(applicationContext)
 
         // Intentデータ取得
@@ -235,10 +235,16 @@ open class BaseActivity : AppCompatActivity() {
     }
 
     // 設定変更画面へ遷移する共通メソッド
-    protected fun openChangeTimes() {
+    protected fun openChangeTimes(stdText: String, maxLimit: Int, maxRepsLimit: Int) {
         val intentC = Intent(this, MainActivity2::class.java)
         intentC.putExtra("TEXT_KEY4", workmenu) // initializeStandardSettingsで取得済みの変数
         intentC.putExtra("TEXT_KEY5", _workoutId)
+
+        // 👇 ここで受け取った文章をIntentに詰める
+        intentC.putExtra("STD_TEXT", stdText)
+// 👇【追加】上限の数値をIntentに詰める
+        intentC.putExtra("MAX_LIMIT", maxLimit)
+        intentC.putExtra("MAX_REPS_LIMIT", maxRepsLimit)
         startActivity(intentC)
     }
 

@@ -60,6 +60,9 @@ class Ashiuranobashi : BaseActivity() {
         //説明文
         val myExplanation = "膝の裏伸ばし（座る）\n椅子に浅めに腰掛け、片方の足を伸ばし、つま先を自分の方に向ける。膝の裏が伸びているのを感じる。30秒間キープ。反対の足も同様に。1回（左右1回ずつ）で1セット。1セット標準。"
 
+        val StandardText = "1回（左右1回ずつ）で1セット。1セット標準。"
+        val masxlimit = 99
+        val maxRep =30
         // すべての共通初期化を実行
         initializeStandardSettings(myExplanation)
         // 音声をロード
@@ -94,7 +97,7 @@ class Ashiuranobashi : BaseActivity() {
         }
         btnChangeTimes.setOnClickListener {
             // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
-            openChangeTimes()
+            openChangeTimes(StandardText, masxlimit,maxRep)
         }
         loadSettingsTick()
     }

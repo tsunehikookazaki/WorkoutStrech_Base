@@ -81,6 +81,9 @@ class Hukkin :  BaseActivity() {
             "床に寝て、両足を床につかないよう10cm位上げ、20秒キープ\n\n高く上げると効果が薄い" +
                     "\n\n20秒で1セット、３セット標準"
 
+        val StandardText ="20秒で1セット、\n3セット（回）標準。 最大99回"
+        val masxlimit = 99
+        val maxRep =30
 
         // すべての共通初期化を実行
         initializeStandardSettings(myExplanation)
@@ -116,7 +119,7 @@ class Hukkin :  BaseActivity() {
 
         btnChangeTimes.setOnClickListener {
             // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
-            openChangeTimes()
+            openChangeTimes(StandardText, masxlimit,maxRep)
         }
 
         loadSettingsTick()

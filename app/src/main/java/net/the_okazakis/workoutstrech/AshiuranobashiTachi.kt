@@ -62,6 +62,10 @@ class AshiuranobashiTachi : BaseActivity() {
         val myExplanation ="片方の脚をベット椅子などに載せ延ばす。つま先は上向きにし。骨盤で身体を前に倒し、" +
                 "30秒キープ \n片足交互1回で1セット １セット標準"
 
+        val StandardText = "片足交互1回で1セット １セット標準\n運動回数　1回標準　最大99回"
+        val masxlimit = 99
+        val maxRep =30
+
         // すべての共通初期化を実行
         initializeStandardSettings(myExplanation)
         // 音声をロード
@@ -96,7 +100,7 @@ class AshiuranobashiTachi : BaseActivity() {
         }
         btnChangeTimes.setOnClickListener {
             // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
-            openChangeTimes()
+            openChangeTimes(StandardText, masxlimit,maxRep)
         }
         loadSettingsTick()
     }

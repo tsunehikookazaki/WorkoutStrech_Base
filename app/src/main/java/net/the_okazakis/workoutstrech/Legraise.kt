@@ -76,6 +76,10 @@ class Legraise : BaseActivity() {
             "仰向けに寝て、手は身体の横に置く\n足はなるべく伸ばす（きつい場合は曲げてもよい.）\n足をそろえてゆっくり上げて(出来れば90度位に)ゆっくりおろす\n" +
                     "下したとき足は床に付けない。\n\n10回で1セット、3セットが標準"
 
+        val StandardText ="10回で1セット。\n3セット（回）標準。"
+        val masxlimit = 99
+        val maxRep =30
+
         // すべての共通初期化を実行
         initializeStandardSettings(myExplanation)
         // 音声をロード
@@ -109,7 +113,7 @@ class Legraise : BaseActivity() {
         }
         btnChangeTimes.setOnClickListener {
             // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
-            openChangeTimes()
+            openChangeTimes(StandardText, masxlimit,maxRep)
         }
 
         loadSettingsTick()

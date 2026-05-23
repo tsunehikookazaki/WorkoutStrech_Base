@@ -65,6 +65,10 @@ class Hihukukinn : BaseActivity() {
             "腓腹筋伸ばし\n両手を壁に付けて身体を斜めにし、伸ばしたい方の足をゆっくり後ろに引き、踵を付ける。" +
                     "腰、背中を曲げない。踵が浮かないように。\n\n左右15秒づつが1セット。２セット標準"
 
+        val StandardText = "左右15秒づつが1セット。２セット標準\n（運動回数２回標準  最大99回）"
+        val masxlimit = 99
+        val maxRep =30
+
         // すべての共通初期化を実行
         initializeStandardSettings(myExplanation)
         // 音声をロード
@@ -100,7 +104,7 @@ class Hihukukinn : BaseActivity() {
 
         btnChangeTimes.setOnClickListener {
             // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
-            openChangeTimes()
+            openChangeTimes(StandardText, masxlimit,maxRep)
         }
         loadSettingsTick()
     }

@@ -54,6 +54,9 @@ class Kamatakakato : BaseActivity() {
         val myExplanation =
             "鎌田式 かかと落とし\n背筋を伸ばし、両足を肩幅に広げ、ゆっくりつま先立ちになる。ゆっくりかかとを落として、すとんと衝撃を与える。膝を痛めないように少しだけ曲げる。10回で1セット。1セット標準。目指せ1日3セット"
 
+        val StandardText ="10回で1セット。1セット標準。"
+        val masxlimit = 99
+        val maxRep =30
 
         // すべての共通初期化を実行
         initializeStandardSettings(myExplanation)
@@ -88,7 +91,7 @@ class Kamatakakato : BaseActivity() {
         }
         btnChangeTimes.setOnClickListener {
             // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
-            openChangeTimes()
+            openChangeTimes(StandardText, masxlimit,maxRep)
         }
 
         loadSettingsTick()

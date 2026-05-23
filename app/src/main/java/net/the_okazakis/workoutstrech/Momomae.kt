@@ -61,6 +61,10 @@ class Momomae : BaseActivity() {
             "前モモ伸ばしし\n片方の足を後ろに引き、足を持ってかかとをおしりに引き付ける。前モモが伸びているのを感じる。30秒間キープ。反対の足も同様に。1回（左右1回ずつ）で1セット。1セット標準。" +
                     "足が持てない場合はタオルなどを使って引き付ける。モモを後ろに引くとより効果的。　足が横に出ないように、前に出ないように、腰が反らないように注意する。"
 
+        val StandardText ="左右1回づつで1セット。1セット標準。"
+        val masxlimit = 99
+        val maxRep =30
+
         // すべての共通初期化を実行
         initializeStandardSettings(myExplanation)
         // 音声をロード
@@ -94,7 +98,7 @@ class Momomae : BaseActivity() {
         }
         btnChangeTimes.setOnClickListener {
             // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
-            openChangeTimes()
+            openChangeTimes(StandardText, masxlimit,maxRep)
         }
 
         loadSettingsTick()

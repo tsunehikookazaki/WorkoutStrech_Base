@@ -67,6 +67,10 @@ class Tsumasakidachi :  BaseActivity() {
           val myExplanation =
             "椅子または壁に手をつき、背筋を伸ばし、ゆっくりつま先立ちになる。ゆっくりかかとを下ろす。かかとは床につけないと効果的。息を止めない。15回標準。"
 
+          val StandardText ="運動回数15回標準　最大99回"
+          val masxlimit = 99
+          val maxRep =30
+
           // すべての共通初期化を実行
           initializeStandardSettings(myExplanation)
           // 音声をロード
@@ -100,7 +104,7 @@ class Tsumasakidachi :  BaseActivity() {
           }
           btnChangeTimes.setOnClickListener {
               // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
-              openChangeTimes()
+              openChangeTimes(StandardText, masxlimit,maxRep)
           }
 
           loadSettingsTick()

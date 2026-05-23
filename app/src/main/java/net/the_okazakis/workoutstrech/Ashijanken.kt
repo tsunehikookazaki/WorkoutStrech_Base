@@ -9,10 +9,10 @@ class Ashijanken :BaseActivity() {
 
             timeCount++
             num++
-            if (extimes < maxextimes) {
+            if (extimes <= maxextimes) {
                 when (num) {
                     1 -> {
-                        tv.text = "${extimes + 1}/$maxextimes 回"
+                        tv.text = "${extimes}/$maxextimes 回"
                         tv2.text = getString(R.string.goo)
                         playSoundSingle(sndgo)
                     }
@@ -56,9 +56,11 @@ class Ashijanken :BaseActivity() {
         val myExplanation =
              "足の指でグー、チョキ(裏)　パーをする。" +
                 "\nグー指はなるべく深く曲げる。チョキ、パーはなるべく大きく開く" +
-                "\n\nグー　チョキ　パーを15回標準"
+                "\n\nグー　チョキ　パーを16回標準"
 
-
+        val StandardText = "グー）チョキ　パー、グー（裏）チョキ　パーを各8回　16回標準\n最大99"
+        val maxLimit = 99
+        val maxRep =30
         // すべての共通初期化を実行
         initializeStandardSettings(myExplanation)
         // 音声をロード
@@ -95,7 +97,7 @@ class Ashijanken :BaseActivity() {
 
         btnChangeTimes.setOnClickListener {
             // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
-            openChangeTimes()
+            openChangeTimes(StandardText, maxLimit, maxRep )
         }
         loadSettingsTick()
     }

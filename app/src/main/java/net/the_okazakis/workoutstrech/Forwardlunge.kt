@@ -60,6 +60,10 @@ class Forwardlunge : BaseActivity() {
         val myExplanation =
             "膝の筋力アップ(フロントランジ)\n胸を張って、手を腰に当て、片方の足をゆっくり前に。大きく踏み出す。後ろの膝がつきそうなくらい腰を下ろし、ゆっくり元に戻る。反対の足も同じように。10回で1セット。1セット標準。"
 
+        val StandardText = "10回で1セット。1セット標準"
+        val masxlimit = 99
+        val maxRep =30
+
         // すべての共通初期化を実行
         initializeStandardSettings(myExplanation)
         // 音声をロード
@@ -94,7 +98,7 @@ class Forwardlunge : BaseActivity() {
         }
         btnChangeTimes.setOnClickListener {
             // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
-            openChangeTimes()
+            openChangeTimes(StandardText, masxlimit,maxRep)
         }
         loadSettingsTick()
     }

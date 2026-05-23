@@ -57,6 +57,9 @@ class Ashiage : BaseActivity() {
                     "つま先が10cm以上になるよう、足(モモ)を上げる。\n膝を曲げないで、踵から上げる気持ちで。" +
                     "\n\n左右10秒ずつ３回が１セット。1セットが標準"
 
+        val StandardText = "左右10秒ずつ 3回（1セット）"
+        val masxlimit = 99
+        val maxRep =30
         // すべての共通初期化を実行
         initializeStandardSettings(myExplanation)
 
@@ -95,7 +98,7 @@ class Ashiage : BaseActivity() {
         }
         btnChangeTimes.setOnClickListener {
             // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
-            openChangeTimes()
+            openChangeTimes(StandardText, masxlimit,maxRep)
         }
        loadAllStandardSounds()
     }

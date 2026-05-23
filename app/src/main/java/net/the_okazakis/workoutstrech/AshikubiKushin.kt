@@ -45,6 +45,9 @@ class AshikubiKushin : BaseActivity() {
         val myExplanation = "膝を伸ばして座り、足首をゆっくり手前に曲げ、次に向こう側に伸ばす。\n" +
                 "ふくらはぎ、足の甲が伸びているのを感じる。\n\n15回標準。"
 
+        val StandardText = "15回標準　最大99回"
+        val masxlimit = 99
+        val maxRep =30
         // すべての共通初期化を実行
         initializeStandardSettings(myExplanation)
         // 音声をロード
@@ -80,7 +83,7 @@ class AshikubiKushin : BaseActivity() {
 
         btnChangeTimes.setOnClickListener {
             // 引数なしで呼ぶだけ（必要なデータはBaseが持っているため）
-            openChangeTimes()
+            openChangeTimes(StandardText, masxlimit,maxRep)
         }
         loadSettingsTick()
     }
