@@ -6,9 +6,6 @@
         <package android:name="net.the_okazakis.letsdoit" />
     </queries>
 
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
-    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
@@ -24,8 +21,7 @@
         tools:targetApi="34" >
         <activity
             android:name=".Ashiage"
-            android:exported="false"
-            android:theme="@style/Theme.WorkoutStrech" />
+            android:exported="false" />
         <activity
             android:name=".HipabdactionBelt"
             android:exported="false" />
@@ -107,7 +103,6 @@
             android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

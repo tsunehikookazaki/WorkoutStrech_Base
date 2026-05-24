@@ -42,6 +42,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+
+
         // ボタンをIDで取得
         val buttonLog = findViewById<Button>(R.id.buttonLog)
 
@@ -109,23 +111,7 @@ class MainActivity : AppCompatActivity() {
         val lvMenu = findViewById<ListView>(R.id.lvMenu)   // ListViewオブジェクトを取得。
         lvMenu.onItemClickListener = ListItemClickListener()  // ListViewにリスナを設定。
 
-        checkPermissions()
-    }
 
-    private fun checkPermissions() {
-        val permissions = mutableListOf<String>()
-        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
-            // ストレージ権限（API 32以下で必要）
-            permissions.add(android.Manifest.permission.READ_EXTERNAL_STORAGE)
-            permissions.add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        }
-
-        val needed = permissions.filter {
-            androidx.core.content.ContextCompat.checkSelfPermission(this, it) != android.content.pm.PackageManager.PERMISSION_GRANTED
-        }
-        if (needed.isNotEmpty()) {
-            androidx.core.app.ActivityCompat.requestPermissions(this, needed.toTypedArray(), 100)
-        }
     }
 
     /**

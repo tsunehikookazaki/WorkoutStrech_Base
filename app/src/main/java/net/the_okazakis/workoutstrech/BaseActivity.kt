@@ -14,8 +14,6 @@ import android.widget.ImageButton
 
 open class BaseActivity : AppCompatActivity() {
 
-    // --- 共通のView ---
-
     protected lateinit var tv: TextView
     protected lateinit var tv2: TextView
     protected lateinit var textmenu: TextView
@@ -399,13 +397,17 @@ open class BaseActivity : AppCompatActivity() {
         btnstop.isEnabled = false
         btnrerstart.isEnabled = false
         otherButtons.forEach { it.isEnabled = true }
+
         if (!isSaved) {
-            RecordManager.saveRecord(this, "${_workoutId}$workmenu")
-            isSaved = true
-            tvMessage.text = getString(R.string.good_job)
-            onSaveComplete()
+
+            //    RecordManager.saveRecord(this, "${_workoutId}$workmenu")
+            RecordManager.saveRecord(this, "%02d%s".format(_workoutId, workmenu))
+                isSaved = true
+                tvMessage.text = getString(R.string.good_job)
+                onSaveComplete()
         }
     }
+
 
     override fun onDestroy() {
         if (::_helper.isInitialized) _helper.close()
